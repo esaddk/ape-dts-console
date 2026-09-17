@@ -1,0 +1,171 @@
+{
+  "enums": {
+    "db_type": ["mysql", "pg", "mssql", "kafka", "mongo", "redis", "clickhouse", "starrocks", "doris", "tidb"],
+    "extract_type": ["snapshot", "cdc", "snapshot_and_cdc", "check_log", "struct", "snapshot_file", "scan", "reshard"],
+    "sink_type": ["dummy", "write", "check", "struct", "statistic", "sql", "push", "merge"],
+    "parallel_type": ["serial", "snapshot", "rdb_partition", "rdb_merge", "rdb_check", "table", "mongo", "redis"],
+    "extractor_parallel_type": ["table", "chunk"],
+    "conflict_policy": ["interrupt", "ignore"],
+    "ssl_mode": ["disable", "require", "verify_ca", "verify_full"],
+    "transaction_isolation": ["default", "read_uncommitted", "read_committed", "repeatable_read", "serializable"],
+    "do_events": ["insert", "update", "delete"]
+  },
+
+  "sections": {
+    "extractor": {
+      "groups": ["connection", "snapshot", "load"],
+      "fields": [
+        { "key": "db_type", "label": "Source DB type", "type": "select", "enum": "db_type", "required": true, "group": "connection" },
+        { "key": "extract_type", "label": "Extract type", "type": "select", "enum": "extract_type", "required": true, "group": "connection" },
+        { "key": "url", "label": "Source URL", "type": "text", "placeholder": "mysql://root:123456@src-mysql:3306?ssl-mode=disabled", "default": "", "group": "connection" },
+        { "key": "username", "label": "Username", "type": "text", "default": "", "group": "connection", "advanced": true },
+        { "key": "password", "label": "Password", "type": "password", "default": "", "group": "connection", "advanced": true },
+        { "key": "server_id", "label": "Server ID (MySQL CDC)", "type": "number", "default": "", "group": "connection", "help": "required for db_type=mysql, extract_type=cdc", "requiredIf": { "db_type": "mysql", "extract_type": "cdc" } },
+        { "key": "slot_name", "label": "Replication slot name (PG CDC)", "type": "text", "default": "", "group": "connection", "advanced": true, "help": "required for db_type=pg, extract_type=cdc", "requiredIf": { "db_type": "pg", "extract_type": "cdc" } },
+        { "key": "pub_name", "label": "Publication name (PG CDC)", "type": "text", "default": "", "group": "connection", "advanced": true, "help": "pg only; ape-dts auto-creates one from slot_name if left blank" },
+        { "key": "recreate_slot_if_exists", "label": "Recreate slot if it already exists", "type": "checkbox", "default": true, "group": "connection", "advanced": true, "help": "pg only" },
+        { "key": "start_lsn", "label": "Start LSN (PG CDC)", "type": "text", "default": "", "group": "connection", "advanced": true, "help": "pg only; set by the Migrate flow, leave blank otherwise" },
+        { "key": "source", "label": "Mongo CDC source", "type": "select", "options": ["op_log", "change_stream"], "default": "", "group": "connection", "help": "mongo cdc only" },
+        { "key": "max_connections", "label": "Max connections", "type": "number", "default": 10, "group": "connection", "advanced": true },
+        { "key": "batch_size", "label": "Batch size", "type": "number", "default": 10000, "group": "snapshot", "help": "rows pulled per batch; also chunk size when parallel_type=chunk" },
+        { "key": "parallel_type", "label": "Snapshot parallel type", "type": "select", "enum": "extractor_parallel_type", "default": "table", "group": "snapshot" },
+        { "key": "parallel_size", "label": "Snapshot worker count", "type": "number", "default": 1, "group": "snapshot" },
+        { "key": "max_rps", "label": "Max records/sec (source)", "type": "number", "default": 0, "group": "load", "help": "0 = unlimited. Throttles reads from the source." },
+        { "key": "max_mbps", "label": "Max MiB/sec (source)", "type": "number", "default": 0, "group": "load", "help": "0 = unlimited." }
+      ]
+    },
+
+    "filter": {
+      "groups": ["scope"],
+      "fields": [
+        { "key": "do_dbs", "label": "Databases to sync", "type": "text", "placeholder": "test_db", "default": "*", "group": "scope" },
+        { "key": "do_tbs", "label": "Tables to sync", "type": "text", "placeholder": "test_db.tb_1", "default": "", "group": "scope", "advanced": true },
+        { "key": "ignore_dbs", "label": "Databases to ignore", "type": "text", "default": "", "group": "scope", "advanced": true },
+        { "key": "ignore_tbs", "label": "Tables to ignore", "type": "text", "default": "", "group": "scope", "advanced": true },
+        { "key": "do_events", "label": "Events to sync", "type": "multiselect", "enum": "do_events", "default": ["insert", "update", "delete"], "group": "scope" },
+        { "key": "do_ddls", "label": "DDLs to sync (MySQL CDC)", "type": "text", "default": "", "group": "scope", "advanced": true, "help": "e.g. create_table,alter_table,drop_table" }
+      ]
+    },
+
+    "sinker": {
+      "groups": ["connection", "write", "load"],
+      "fields": [
+        { "key": "db_type", "label": "Target DB type", "type": "select", "enum": "db_type", "required": true, "group": "connection" },
+        { "key": "sink_type", "label": "Sink type", "type": "select", "enum": "sink_type", "default": "write", "required": true, "group": "connection" },
+        { "key": "url", "label": "Target URL", "type": "text", "placeholder": "mysql://root:123456@dst-mysql:3306?ssl-mode=disabled", "default": "", "group": "connection" },
+        { "key": "username", "label": "Username", "type": "text", "default": "", "group": "connection", "advanced": true },
+        { "key": "password", "label": "Password", "type": "password", "default": "", "group": "connection", "advanced": true },
+        { "key": "max_connections", "label": "Max connections", "type": "number", "default": 10, "group": "connection", "advanced": true },
+        { "key": "conflict_policy", "label": "Conflict policy (struct)", "type": "select", "enum": "conflict_policy", "default": "interrupt", "group": "write", "advanced": true },
+        { "key": "replace", "label": "Replace on insert conflict", "type": "checkbox", "default": true, "group": "write", "advanced": true },
+        { "key": "disable_foreign_key_checks", "label": "Disable FK checks while writing", "type": "checkbox", "default": true, "group": "write", "advanced": true },
+        { "key": "batch_size", "label": "Batch size", "type": "number", "default": 200, "group": "load", "help": "rows per write to target. Lower this if the target DB is small/fragile." },
+        { "key": "max_rps", "label": "Max records/sec (target)", "type": "number", "default": 0, "group": "load", "help": "0 = unlimited. Hard cap on write rate into the target DB." },
+        { "key": "max_mbps", "label": "Max MiB/sec (target)", "type": "number", "default": 0, "group": "load", "help": "0 = unlimited." }
+      ]
+    },
+
+    "parallelizer": {
+      "groups": ["main"],
+      "fields": [
+        { "key": "parallel_type", "label": "Parallel type", "type": "select", "enum": "parallel_type", "default": "serial", "required": true, "group": "main" },
+        { "key": "parallel_size", "label": "Parallel size", "type": "number", "default": 1, "group": "main", "help": "concurrent writer threads. Tutorials commonly use 8; default is 1." }
+      ]
+    },
+
+    "pipeline": {
+      "groups": ["buffer"],
+      "fields": [
+        { "key": "buffer_size", "label": "Buffer size", "type": "number", "default": 16000, "group": "buffer", "help": "max records cached in memory between extractor and sinker" },
+        { "key": "buffer_memory_mb", "label": "Buffer memory limit (MB)", "type": "number", "default": 0, "group": "buffer", "help": "0 = unset. Blocks new extraction once reached, even under buffer_size." },
+        { "key": "checkpoint_interval_secs", "label": "Checkpoint interval (secs)", "type": "number", "default": 10, "group": "buffer", "help": "how often logs/position/monitor counters are flushed" },
+        { "key": "batch_sink_interval_secs", "label": "Batch sink interval (secs)", "type": "number", "default": 0, "group": "buffer", "help": "max wait before flushing a partial (non-empty) batch", "advanced": true },
+        { "key": "counter_time_window_secs", "label": "Counter time window (secs)", "type": "number", "default": "", "group": "buffer", "advanced": true, "help": "defaults to checkpoint_interval_secs" }
+      ]
+    },
+
+    "metrics": {
+      "groups": ["main"],
+      "optional": true,
+      "fields": [
+        { "key": "http_host", "label": "Bind host", "type": "text", "default": "0.0.0.0", "group": "main" },
+        { "key": "http_port", "label": "Port", "type": "number", "default": 9090, "group": "main" },
+        { "key": "workers", "label": "HTTP workers", "type": "number", "default": 2, "group": "main", "advanced": true },
+        { "key": "labels", "label": "Labels (k1=v1,k2=v2)", "type": "text", "default": "", "group": "main", "advanced": true }
+      ]
+    }
+  },
+
+  "presets": {
+    "struct_migration": {
+      "label": "Structure migration (mysql → mysql)",
+      "description": "Copies schema/table definitions only. Run this before a snapshot or CDC task if the target schema doesn't exist yet.",
+      "values": {
+        "extractor": { "db_type": "mysql", "extract_type": "struct", "url": "mysql://root:123456@src-mysql:3306?ssl-mode=disabled" },
+        "sinker": { "db_type": "mysql", "sink_type": "struct", "url": "mysql://root:123456@dst-mysql:3306?ssl-mode=disabled" },
+        "filter": { "do_dbs": "test_db" },
+        "parallelizer": { "parallel_type": "serial" },
+        "pipeline": { "buffer_size": 100, "checkpoint_interval_secs": 1 }
+      }
+    },
+    "snapshot": {
+      "label": "Snapshot (mysql → mysql)",
+      "description": "One-time full copy of existing rows.",
+      "values": {
+        "extractor": { "db_type": "mysql", "extract_type": "snapshot", "url": "mysql://root:123456@src-mysql:3306?ssl-mode=disabled" },
+        "sinker": { "db_type": "mysql", "sink_type": "write", "url": "mysql://root:123456@dst-mysql:3306?ssl-mode=disabled" },
+        "filter": { "do_dbs": "test_db", "do_events": ["insert"] },
+        "parallelizer": { "parallel_type": "snapshot", "parallel_size": 8 },
+        "pipeline": { "buffer_size": 16000, "checkpoint_interval_secs": 1 }
+      }
+    },
+    "cdc_mysql": {
+      "label": "CDC (mysql → mysql)",
+      "description": "Tails the source binlog and streams inserts/updates/deletes to the target. Target schema must already exist.",
+      "values": {
+        "extractor": { "db_type": "mysql", "extract_type": "cdc", "server_id": 2000, "url": "mysql://root:123456@src-mysql:3306?ssl-mode=disabled" },
+        "sinker": { "db_type": "mysql", "sink_type": "write", "batch_size": 200, "url": "mysql://root:123456@dst-mysql:3306?ssl-mode=disabled" },
+        "filter": { "do_dbs": "test_db", "do_events": ["insert", "update", "delete"] },
+        "parallelizer": { "parallel_type": "rdb_merge", "parallel_size": 8 },
+        "pipeline": { "buffer_size": 16000, "checkpoint_interval_secs": 1 }
+      }
+    },
+    "cdc_pg": {
+      "label": "CDC (pg → pg)",
+      "description": "Tails the source WAL via a logical replication slot and streams inserts/updates/deletes to the target. Slot and publication are auto-created. Target schema/table must already exist.",
+      "values": {
+        "extractor": { "db_type": "pg", "extract_type": "cdc", "slot_name": "ape_dts_slot", "recreate_slot_if_exists": true, "url": "postgres://postgres:postgres@src-pg:5432/postgres" },
+        "sinker": { "db_type": "pg", "sink_type": "write", "batch_size": 200, "url": "postgres://postgres:postgres@dst-pg:5432/postgres" },
+        "filter": { "do_dbs": "", "do_tbs": "test_db_1.tb_1", "do_events": ["insert", "update", "delete"] },
+        "parallelizer": { "parallel_type": "rdb_merge", "parallel_size": 2 },
+        "pipeline": { "buffer_size": 4000, "checkpoint_interval_secs": 1 }
+      }
+    },
+    "cdc_mongo": {
+      "label": "CDC (mongo → mongo)",
+      "description": "Tails the source oplog and streams changes to the target. Target database/collection must already exist.",
+      "values": {
+        "extractor": { "db_type": "mongo", "extract_type": "cdc", "source": "op_log", "url": "mongodb://src-mongo:27017" },
+        "sinker": { "db_type": "mongo", "sink_type": "write", "url": "mongodb://ape_dts:123456@dst-mongo:27017" },
+        "filter": { "do_dbs": "test_db", "do_events": ["insert", "update", "delete"] },
+        "parallelizer": { "parallel_type": "mongo", "parallel_size": 8 },
+        "pipeline": { "buffer_size": 16000, "checkpoint_interval_secs": 1 }
+      }
+    }
+  },
+
+  "requiredByShape": {
+    "struct": {
+      "extractor": ["db_type", "extract_type", "url"],
+      "sinker": ["db_type", "sink_type", "url"]
+    },
+    "snapshot": {
+      "extractor": ["db_type", "extract_type", "url"],
+      "sinker": ["db_type", "sink_type", "url"]
+    },
+    "cdc": {
+      "extractor": ["db_type", "extract_type", "url"],
+      "sinker": ["db_type", "sink_type", "url"]
+    }
+  }
+}

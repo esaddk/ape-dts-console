@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option A — Verdict First</title>
+<link rel="stylesheet" href="../../public/style.css">
+<style>
+  .option-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    background: var(--foreground); color: #fff; padding: 0.55rem 1.25rem; font-size: 0.8rem;
+  }
+  .option-bar a { color: #fff; opacity: 0.72; text-decoration: none; font-weight: 500; }
+  .option-bar a:hover { opacity: 1; }
+  .option-bar .sep { opacity: 0.35; }
+  .option-bar strong { font-weight: 650; }
+  .state-toggle { display: inline-flex; gap: 0.25rem; background: rgba(255,255,255,0.12); padding: 0.2rem; border-radius: 999px; }
+  .state-toggle button {
+    border: none; background: none; color: rgba(255,255,255,0.72); font-size: 0.76rem; font-weight: 550;
+    padding: 0.28rem 0.7rem; border-radius: 999px; cursor: pointer; font-family: inherit;
+  }
+  .state-toggle button.active { background: #fff; color: var(--foreground); }
+
+  /* ---- verdict hero ---- */
+  .sync-hero { padding: 1.5rem 1.6rem; transition: background 0.2s, border-color 0.2s; }
+  .sync-hero-top { display: flex; align-items: center; gap: 1.1rem; }
+  .sync-hero-icon {
+    width: 3.1rem; height: 3.1rem; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sync-hero-icon svg { width: 1.7rem; height: 1.7rem; }
+  .sync-hero-text { flex: 1; min-width: 0; }
+  .sync-hero-title { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+  .sync-hero-sub { font-size: 0.88rem; color: var(--muted-foreground); margin-top: 0.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .sync-hero-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+  .sync-hero-spark { margin-top: 1.1rem; display: flex; align-items: center; gap: 0.6rem; }
+  .sync-hero-spark svg { flex: 1; height: 34px; width: 100%; }
+  .sync-hero-spark .spark-label { font-size: 0.72rem; color: var(--muted-foreground); white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  [data-state="ok"] .sync-hero { background: var(--success-bg); border-color: var(--success-border); }
+  [data-state="ok"] .sync-hero-icon { background: var(--success); color: #fff; }
+  [data-state="ok"] .sync-hero-title { color: var(--success); }
+  [data-state="ok"] .hide-ok { display: none; }
+
+  [data-state="bad"] .sync-hero { background: var(--destructive-bg); border-color: var(--destructive-border); }
+  [data-state="bad"] .sync-hero-icon { background: var(--destructive); color: #fff; }
+  [data-state="bad"] .sync-hero-title { color: var(--destructive); }
+  [data-state="bad"] .hide-bad { display: none; }
+
+  .facts-strip { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; padding: 0.85rem 1.1rem; }
+  .facts-strip .spacer { flex: 1; }
+
+  @media (max-width: 640px) {
+    .sync-hero-top { flex-wrap: wrap; }
+    .sync-hero-actions { width: 100%; justify-content: flex-end; }
+  }
+</style>
+</head>
+<body data-state="ok">
+<div class="option-bar">
+  <span><a href="index.html">← Options</a><span class="sep">/</span><strong>A — Verdict First</strong></span>
+  <div class="state-toggle">
+    <button data-set="ok" class="active">Simulate: in sync</button>
+    <button data-set="bad">Simulate: falling behind</button>
+  </div>
+</div>
+
+<header>
+  <div class="brand">
+    <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l4-4 4 4M8 3v12"/><path d="M20 17l-4 4-4-4M16 21V9"/></svg></span>
+    <h1>ape-dts</h1>
+  </div>
+  <span class="brand-divider"></span>
+  <span class="brand-tagline">Change Data Capture console</span>
+</header>
+
+<main>
+  <div class="breadcrumb"><a>Task Center</a><span class="sep">/</span><span class="current">cdc-pg-to-pg-prod-01</span></div>
+
+  <div class="panel sync-hero">
+    <div class="sync-hero-top">
+      <div class="sync-hero-icon">
+        <svg class="hide-bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+        <svg class="hide-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      </div>
+      <div class="sync-hero-text">
+        <div class="sync-hero-title hide-bad">In sync</div>
+        <div class="sync-hero-title hide-ok">Falling behind</div>
+        <div class="sync-hero-sub hide-bad">0.2s behind · last event 3s ago</div>
+        <div class="sync-hero-sub hide-ok">14.8s behind and climbing · last event 1s ago</div>
+      </div>
+      <div class="sync-hero-actions">
+        <button class="secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="1.5"/></svg>Stop</button>
+        <button class="secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>Verify</button>
+      </div>
+    </div>
+    <div class="sync-hero-spark">
+      <span class="spark-label">5 min</span>
+      <svg viewBox="0 0 300 34" preserveAspectRatio="none">
+        <polyline class="hide-bad" points="0,26 30,25 60,27 90,24 120,26 150,23 180,25 210,22 240,24 270,20 300,22" fill="none" stroke="var(--success)" stroke-width="2"/>
+        <polyline class="hide-ok" points="0,28 30,26 60,24 90,20 120,16 150,10 180,8 210,5 240,4 270,3 300,2" fill="none" stroke="var(--destructive)" stroke-width="2"/>
+      </svg>
+      <span class="spark-label hide-bad">~0.2s</span>
+      <span class="spark-label hide-ok">14.8s</span>
+    </div>
+  </div>
+
+  <div class="panel facts-strip">
+    <span class="chip"><span class="chip-label">source</span><span class="v mono">host.docker.internal:15432/test_db_1</span></span>
+    <span class="chip"><span class="chip-label">target</span><span class="v mono">host.docker.internal:15433/test_db_1</span></span>
+    <span class="chip"><span class="chip-label">pos</span><span class="v mono">0/15DDA58</span></span>
+    <span class="chip"><span class="chip-label">started</span><span class="v">Sep 15, 2026, 8:41 PM</span></span>
+    <span class="spacer"></span>
+    <button class="secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>Remove</button>
+  </div>
+
+  <div class="panel">
+    <h2>Performance</h2>
+    <div class="metric-grid">
+      <div class="metric-card"><div class="label">Throughput</div><div class="value">842<span style="font-size:0.9rem;font-weight:500;color:var(--muted-foreground)"> rows/sec</span></div></div>
+      <div class="metric-card"><div class="label">Write latency</div><div class="value">4.2<span style="font-size:0.9rem;font-weight:500;color:var(--muted-foreground)"> ms</span></div></div>
+      <div class="metric-card"><div class="label">Queue depth</div><div class="value">12<span style="font-size:0.9rem;font-weight:500;color:var(--muted-foreground)"> events</span></div></div>
+    </div>
+    <details>
+      <summary class="muted">All counters</summary>
+      <div class="metric-grid" style="margin-top:0.7rem">
+        <div class="metric-card"><div class="label">extractor.data_bytes</div><div class="value">1.9<span style="font-size:0.9rem;font-weight:500;color:var(--muted-foreground)"> MB/s</span></div></div>
+        <div class="metric-card"><div class="label">sinker.records_per_query</div><div class="value">38</div></div>
+        <div class="metric-card"><div class="label">pipeline.record_size</div><div class="value">220<span style="font-size:0.9rem;font-weight:500;color:var(--muted-foreground)"> B</span></div></div>
+      </div>
+    </details>
+  </div>
+
+  <div class="panel">
+    <h2>Data Verification</h2>
+    <p class="muted verify-direction">Compares source (host.docker.internal:15432/test_db_1) against target (host.docker.internal:15433/test_db_1) — flags rows missing on the target and rows whose values differ.</p>
+    <div class="toolbar" style="margin-bottom:0.6rem">
+      <span class="badge running">matched</span>
+      <span class="muted">last run 9/15/2026, 8:52 PM</span>
+    </div>
+    <table class="table-dense">
+      <thead><tr><th>Schema.Table</th><th title="Rows that exist on the source but were not found on the target">Missing on target</th><th title="Rows that exist on both sides but have different values">Value mismatches</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr class="consistency-row ok"><td>test_db_1.tb_1</td><td>0</td><td>0</td><td><span class="badge running">matched</span></td></tr>
+        <tr class="consistency-row ok"><td>test_db_1.tb_2</td><td>0</td><td>0</td><td><span class="badge running">matched</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+  document.querySelectorAll('.state-toggle button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.body.dataset.state = btn.dataset.set;
+      document.querySelectorAll('.state-toggle button').forEach((b) => b.classList.toggle('active', b === btn));
+    });
+  });
+</script>
+</body>
+</html>

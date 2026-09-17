@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live Pipeline — styling options</title>
+<link rel="stylesheet" href="../../public/style.css">
+<style>
+  .opt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+  .opt-card { display: flex; flex-direction: column; gap: 0.6rem; }
+  .opt-card h2 { display: flex; align-items: baseline; gap: 0.5rem; }
+  .opt-card .letter {
+    width: 1.7rem; height: 1.7rem; border-radius: 50%; background: var(--accent); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
+  }
+  .opt-card p { margin: 0; font-size: 0.86rem; color: var(--muted-foreground); flex: 1; }
+  .opt-card .thesis { font-size: 0.82rem; color: var(--foreground); font-weight: 550; margin: -0.3rem 0 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l4-4 4 4M8 3v12"/><path d="M20 17l-4 4-4-4M16 21V9"/></svg></span>
+    <h1>ape-dts</h1>
+  </div>
+  <span class="brand-divider"></span>
+  <span class="brand-tagline">Live Pipeline — styling review</span>
+</header>
+<main>
+  <div class="panel">
+    <h2 style="margin-bottom:0.4rem">Same layout, three visual treatments</h2>
+    <p class="muted" style="margin:0">
+      Structure is settled — source / buffer / target with an animated flow and a plain-language verdict
+      caption. What's open is how it should look and feel. Each option below is the same content and
+      interaction, restyled. Use the toggle in the top bar to compare each one's healthy vs. falling-behind state.
+    </p>
+  </div>
+
+  <div class="opt-grid">
+    <div class="panel opt-card">
+      <h2><span class="letter">1</span> Console</h2>
+      <p class="thesis">Same palette as the rest of the app, dressed with node icons.</p>
+      <p>Closest to the current design system — light cards, DMS accent color, a small checkmark tying the
+      target node to the Data Verification panel below it. Lowest visual risk: it reads as a natural extension
+      of every other panel on the page rather than a new sub-language.</p>
+      <a href="pipe-1-console.html"><button class="primary" style="width:100%">Open style 1</button></a>
+    </div>
+
+    <div class="panel opt-card">
+      <h2><span class="letter">2</span> Glow</h2>
+      <p class="thesis">The diagram sits in its own dark "device screen," like a live feed.</p>
+      <p>The pipe diagram is set inside an inset near-black panel with a soft radial glow behind it — indigo
+      when healthy, red when falling behind. The flowing dot gets a strong glow trail instead of a flat dot.
+      Most dramatic option: makes the live-ness of the pipeline unmistakable, at the cost of standing out from
+      the rest of the page's flat-card look.</p>
+      <a href="pipe-2-glow.html"><button class="primary" style="width:100%">Open style 2</button></a>
+    </div>
+
+    <div class="panel opt-card">
+      <h2><span class="letter">3</span> Schematic</h2>
+      <p class="thesis">Reads like a wiring diagram — dense, monospace, built for engineers.</p>
+      <p>Square nodes, hairline dashed connectors, uppercase mono labels, key/value rows instead of prose, and
+      a machine-readable verdict line (<code>in_sync</code> / <code>falling_behind</code>) with an OK/ALERT tag.
+      Densest option: fits more real numbers on screen at once, at the cost of feeling less approachable to a
+      first-time viewer.</p>
+      <a href="pipe-3-schematic.html"><button class="primary" style="width:100%">Open style 3</button></a>
+    </div>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ape-dts UI</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l4-4 4 4M8 3v12"/><path d="M20 17l-4 4-4-4M16 21V9"/></svg>
+    </span>
+    <h1>ape-dts</h1>
+  </div>
+  <span class="brand-divider"></span>
+  <span class="brand-tagline">Change Data Capture console</span>
+</header>
+
+<main>
+  <!-- ============ Page 1: Create Task (#/tasks/new) ============ -->
+  <section id="page-create" class="page">
+    <div class="breadcrumb">
+      <a data-route="#/tasks">Task Center</a><span class="sep">/</span><span class="current">Create Task</span>
+    </div>
+    <div class="stepper">
+      <div class="step done"><span class="step-dot">1</span>Basic Info</div>
+      <div class="step-track done"></div>
+      <div class="step done"><span class="step-dot">2</span>Source &amp; Target</div>
+      <div class="step-track done"></div>
+      <div class="step done"><span class="step-dot">3</span>Objects &amp; Rules</div>
+      <div class="step-track done"></div>
+      <div class="step current"><span class="step-dot">4</span>Precheck &amp; Start</div>
+    </div>
+
+    <div class="panel">
+      <h2>1. Basic Configuration</h2>
+      <div class="field-grid">
+        <div class="field">
+          <label for="task-name">Task name</label>
+          <input id="task-name" type="text" placeholder="cdc-pg-to-mongo-prod-01">
+          <span class="help">Optional — a generated id is used if left blank.</span>
+        </div>
+        <div class="field">
+          <label for="sync-mode">Synchronization</label>
+          <select id="sync-mode">
+            <option value="cdc">Real-time Incremental (CDC)</option>
+            <option value="snapshot">Full copy (snapshot)</option>
+            <option value="migrate">Migrate (snapshot + CDC, no downtime)</option>
+          </select>
+          <span class="help" id="sync-mode-help"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="conn-grid">
+      <div class="panel" id="source-panel">
+        <h2>2. Source Endpoint</h2>
+        <div class="field-grid">
+          <div class="field">
+            <label for="src-db_type">Database type</label>
+            <select id="src-db_type"></select>
+          </div>
+          <div class="field"><label for="src-host">Host</label><input id="src-host" type="text" placeholder="db.example.com"></div>
+          <div class="field"><label for="src-port">Port</label><input id="src-port" type="number"></div>
+          <div class="field"><label for="src-username">Username</label><input id="src-username" type="text"></div>
+          <div class="field"><label for="src-password">Password</label><input id="src-password" type="password"></div>
+        </div>
+        <div class="toolbar" style="margin-top:0.6rem">
+          <button class="secondary" id="src-connect">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5M9 8V2M15 8V2M18 8a1 1 0 0 1 1 1v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5V9a1 1 0 0 1 1-1z"/></svg>
+            Test Connection
+          </button>
+          <span class="conn-status" id="src-connect-status"></span>
+        </div>
+        <div class="field-grid" style="margin-top:0.6rem">
+          <div class="field"><label for="src-database">Database</label><select id="src-database" disabled></select></div>
+          <div class="field" id="src-schema-field" hidden><label for="src-schema">Schema</label><select id="src-schema" disabled></select></div>
+        </div>
+      </div>
+
+      <div class="conn-flow" aria-hidden="true">
+        <span class="flow-track"></span>
+        <span class="flow-dot"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </div>
+
+      <div class="panel" id="dest-panel">
+        <h2>3. Destination Endpoint</h2>
+        <div class="field-grid">
+          <div class="field">
+            <label for="dst-db_type">Database type</label>
+            <select id="dst-db_type"></select>
+          </div>
+          <div class="field"><label for="dst-host">Host</label><input id="dst-host" type="text" placeholder="db.example.com"></div>
+          <div class="field"><label for="dst-port">Port</label><input id="dst-port" type="number"></div>
+          <div class="field"><label for="dst-username">Username</label><input id="dst-username" type="text"></div>
+          <div class="field"><label for="dst-password">Password</label><input id="dst-password" type="password"></div>
+        </div>
+        <div class="toolbar" style="margin-top:0.6rem">
+          <button class="secondary" id="dst-connect">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5M9 8V2M15 8V2M18 8a1 1 0 0 1 1 1v3a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5V9a1 1 0 0 1 1-1z"/></svg>
+            Test Connection
+          </button>
+          <span class="conn-status" id="dst-connect-status"></span>
+        </div>
+        <div class="field-grid" style="margin-top:0.6rem">
+          <div class="field"><label for="dst-database">Database</label><select id="dst-database" disabled></select></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>4. Object Mapping &amp; DDL Sync Settings</h2>
+      <label class="checkbox-row" style="margin-bottom:0.7rem"><input type="checkbox" id="select-all-tables"> Select all tables</label>
+      <div class="mapping-grid">
+        <div class="mapping-list">
+          <div class="mapping-head" id="mapping-src-head">Available source objects</div>
+          <div id="mapping-src-body"></div>
+        </div>
+        <div class="mapping-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+        <div class="mapping-list">
+          <div class="mapping-head" id="mapping-dst-head">Mapped target objects</div>
+          <div id="mapping-dst-body"></div>
+        </div>
+      </div>
+      <label class="checkbox-row" id="ddl-sync-row" style="margin-top:0.9rem" hidden>
+        <input type="checkbox" id="ddl-sync-toggle"> Enable DDL synchronization (create/alter/drop table)
+      </label>
+    </div>
+
+    <details class="panel">
+      <summary><h2 style="display:inline">Advanced</h2></summary>
+      <div class="toolbar" style="margin-top:0.6rem">
+        <select id="preset-select"></select>
+        <button class="secondary" id="apply-preset">Load preset</button>
+        <label class="checkbox-row"><input type="checkbox" id="advanced-toggle"> Show advanced fields</label>
+      </div>
+      <p class="muted" id="preset-desc"></p>
+      <div class="field-grid" style="margin-top:0.6rem">
+        <div class="field">
+          <label for="network-select">Docker network</label>
+          <select id="network-select"><option value="">(none)</option></select>
+          <span class="help">Leave empty for external DBs (RDS etc). --network host is unreliable under Colima.</span>
+        </div>
+      </div>
+      <div id="form-sections"></div>
+    </details>
+
+    <div class="panel">
+      <div class="toolbar">
+        <button class="secondary" data-route="#/tasks">Cancel</button>
+        <button class="primary" id="start-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Precheck &amp; Start Task
+        </button>
+      </div>
+      <div class="errors" id="build-errors"></div>
+    </div>
+  </section>
+
+  <!-- ============ Page 2: Task Center (#/tasks) ============ -->
+  <section id="page-center" class="page">
+    <div class="breadcrumb"><span class="current">Task Center</span></div>
+    <div class="panel">
+      <div class="panel-eyebrow">
+        <h2>Tasks</h2>
+        <button class="primary" data-route="#/tasks/new">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Create Task
+        </button>
+      </div>
+      <div class="toolbar">
+        <div class="pills" id="status-pills"></div>
+        <input type="text" id="task-search" class="search-input" placeholder="Search by task name / id">
+      </div>
+      <table class="table-dense">
+        <thead><tr><th>Task name / ID</th><th>Source → Target</th><th>Type</th><th>Engine</th><th>Created</th><th>Status</th><th></th></tr></thead>
+        <tbody id="tasks-body"></tbody>
+      </table>
+      <div class="pager" id="tasks-pager"></div>
+    </div>
+  </section>
+
+  <!-- ============ Page 3: Task Detail (#/tasks/:id) ============ -->
+  <section id="page-detail" class="page">
+    <div class="breadcrumb">
+      <a data-route="#/tasks">Task Center</a><span class="sep">/</span><span class="current" id="detail-breadcrumb-label">Detail</span>
+    </div>
+    <div class="toolbar" style="justify-content:space-between">
+      <span class="badge" id="detail-status"></span>
+      <div class="detail-actions">
+        <button class="secondary" id="detail-stop-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="1.5"/></svg>
+          Stop
+        </button>
+        <button class="secondary" id="detail-verify-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+          Verify
+        </button>
+        <button class="secondary" id="detail-remove-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+          Remove
+        </button>
+      </div>
+    </div>
+    <div class="panel" id="migrate-banner" hidden>
+      <h2>Migration phases</h2>
+      <div class="migrate-phase" id="migrate-phase-1"></div>
+      <div class="migrate-phase" id="migrate-phase-2"></div>
+      <div class="migrate-slot-warning" id="migrate-slot-warning" hidden></div>
+    </div>
+
+    <div class="panel">
+      <h2>Live pipeline</h2>
+
+      <div class="pipe-diagram" id="pipe-diagram">
+        <div class="pipe-node source">
+          <div class="pipe-node-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></div>
+          <div class="pipe-node-label" id="pipe-src-label">Source</div>
+          <div class="pipe-node-sub" id="pipe-src-sub">-</div>
+        </div>
+        <div class="pipe-seg" id="pipe-seg-in">
+          <span class="pipe-seg-annot" id="pipe-rate-in">-</span>
+          <span class="pipe-seg-track"></span>
+          <span class="pipe-seg-dot" style="animation-delay:0s"></span>
+        </div>
+        <div class="pipe-node buffer" id="pipe-buffer">
+          <div class="pipe-node-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+          <div class="pipe-node-label">Buffer</div>
+          <div class="pipe-node-sub" id="pipe-queue">-</div>
+        </div>
+        <div class="pipe-seg stalls" id="pipe-seg-out">
+          <span class="pipe-seg-annot" id="pipe-rate-out">-</span>
+          <span class="pipe-seg-track"></span>
+          <span class="pipe-seg-dot" style="animation-delay:1s"></span>
+        </div>
+        <div class="pipe-node target">
+          <div class="pipe-node-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></div>
+          <div class="pipe-node-label" id="pipe-dst-label">Target</div>
+          <div class="pipe-node-sub" id="pipe-dst-sub">-</div>
+          <div class="pipe-node-verify" id="pipe-verify" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+            <span id="pipe-verify-text"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pipe-verdict" id="pipe-verdict">
+        <span id="pipe-verdict-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+        </span>
+        <span id="pipe-verdict-text">waiting for data…</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Performance</h2>
+      <div class="metric-grid" id="metric-cards"></div>
+      <div class="metric-card chart-panel" id="lag-chart-panel">
+        <div class="chart-panel-head">
+          <div class="label">Sync lag over time (seconds)</div>
+          <span class="v mono" id="lag-current">-</span>
+        </div>
+        <canvas id="lag-canvas" width="1000" height="160"></canvas>
+        <div class="chart-panel-foot">
+          <span class="live-dot" id="lag-live-dot"></span>
+          <span class="muted" id="lag-updated">waiting for data…</span>
+        </div>
+      </div>
+      <details>
+        <summary class="muted">All counters</summary>
+        <div class="metric-grid" id="metric-cards-secondary" style="margin-top:0.7rem"></div>
+      </details>
+    </div>
+
+    <div class="panel">
+      <h2>Data Verification</h2>
+      <p class="muted verify-direction" id="verify-direction">Compares every row on the source against the same row on the target.</p>
+      <div class="toolbar" style="margin-bottom:0.6rem">
+        <span class="badge" id="verify-badge">never run</span>
+        <span class="muted" id="verify-detail"></span>
+      </div>
+      <table class="table-dense">
+        <thead><tr>
+          <th>Schema.Table</th>
+          <th title="Rows that exist on the source but were not found on the target">Missing on target</th>
+          <th title="Rows that exist on both sides but have different values">Value mismatches</th>
+          <th>Status</th>
+        </tr></thead>
+        <tbody id="verify-body"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script src="formdata.js"></script>
+<script src="view.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

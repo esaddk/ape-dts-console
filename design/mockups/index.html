@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitoring page — design options</title>
+<link rel="stylesheet" href="../../public/style.css">
+<style>
+  .opt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+  .opt-card { display: flex; flex-direction: column; gap: 0.6rem; }
+  .opt-card h2 { display: flex; align-items: baseline; gap: 0.5rem; }
+  .opt-card .letter {
+    width: 1.7rem; height: 1.7rem; border-radius: 50%; background: var(--accent); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
+  }
+  .opt-card p { margin: 0; font-size: 0.86rem; color: var(--muted-foreground); flex: 1; }
+  .opt-card .thesis { font-size: 0.82rem; color: var(--foreground); font-weight: 550; margin: -0.3rem 0 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l4-4 4 4M8 3v12"/><path d="M20 17l-4 4-4-4M16 21V9"/></svg></span>
+    <h1>ape-dts</h1>
+  </div>
+  <span class="brand-divider"></span>
+  <span class="brand-tagline">Task Detail redesign — option review</span>
+</header>
+<main>
+  <div class="panel">
+    <h2 style="margin-bottom:0.4rem">Task Detail (monitoring): three directions</h2>
+    <p class="muted" style="margin:0">
+      Same goal for all three: a first-time viewer should know, within one second, whether this CDC task
+      is caught up with the source or falling behind, then be able to drill into throughput, lag history and
+      data verification without leaving the page. Each option uses real field names and values from the app,
+      including position/LSN, the nine monitor.log counters and the Data Verification table; nothing is invented.
+      Open one, then use the toggle in its top bar to see how it communicates a healthy vs. a lagging task.
+    </p>
+  </div>
+
+  <div class="opt-grid">
+    <div class="panel opt-card">
+      <h2><span class="letter">A</span> Verdict First</h2>
+      <p class="thesis">One dominant hero answers the question; everything else is secondary.</p>
+      <p>A large status hero — icon, "In sync" / "Falling behind", lag and last-event-age — sits above everything
+      else on the page, with a small inline trend line. Facts, metrics and verification are condensed below it.
+      Safest option: minimal new interaction, biggest jump in glanceability over the current layout.</p>
+      <a href="option-a-verdict.html"><button class="primary" style="width:100%">Open option A</button></a>
+    </div>
+
+    <div class="panel opt-card">
+      <h2><span class="letter">B</span> Status Bar + Dashboard</h2>
+      <p class="thesis">The verdict stays visible while you scroll into the details.</p>
+      <p>A slim sticky status strip (verdict, lag, last event, actions) sits just under the breadcrumb and stays
+      on screen. Below it, lag history, metrics, task facts and verification are all laid out at once in a
+      two-column dashboard — nothing is collapsed. Best fit if you regularly go straight from "is it behind?"
+      to "how far, since when, on which table?" in one motion.</p>
+      <a href="option-b-command.html"><button class="primary" style="width:100%">Open option B</button></a>
+    </div>
+
+    <div class="panel opt-card">
+      <h2><span class="letter">C</span> Live Pipeline</h2>
+      <p class="thesis">The sync verdict is read directly off the moving pipeline, not a separate widget.</p>
+      <p>Source, buffer and target are drawn as a live flow diagram with throughput/latency annotated on the
+      connecting segments; the verdict is the diagram's caption. When lag grows, the flow visibly stalls at the
+      buffer instead of just changing a number. Most distinctive option — leans on the fact this product moves
+      data through a pipe, at the cost of being the newest pattern in this app.</p>
+      <a href="option-c-pipeline.html"><button class="primary" style="width:100%">Open option C</button></a>
+      <a href="pipe-styles.html"><button class="secondary" style="width:100%">Chosen — compare 3 styling options</button></a>
+    </div>
+  </div>
+</main>
+</body>
+</html>
