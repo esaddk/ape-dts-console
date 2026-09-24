@@ -10,6 +10,7 @@ const { parseCheckLine, aggregateCheckLogs, readCheckResult } = require('../lib/
 const { nextStatus } = require('../lib/status.js');
 const { isTransient, shouldRetry, MAX_RETRIES } = require('../lib/retry.js');
 const { dockerizeUrl } = require('../lib/docker.js');
+const { hashPassword, verifyPassword, createSessionToken, verifySession } = require('../lib/auth.js');
 const { buildUrl, buildFormData, checkFormFromTaskForm, cdcFormFromMigrateForm, mergeFormData } = require('../public/formdata.js');
 const {
   describeEngine, describeInstance, computeSyncStatus, lagSeconds, pipelineState,
@@ -517,4 +518,20 @@ test('snapshotPipelineState: reads container status + cumulative row count inste
   assert.deepEqual(snapshotPipelineState('removed', 5), { cls: '', text: 'Snapshot stopped — 5 rows copied' });
   assert.deepEqual(snapshotPipelineState('running', null), { cls: 'state-lag', text: 'Copying…' });
   assert.deepEqual(snapshotPipelineState('running', 12), { cls: 'state-lag', text: 'Copying… — 12 rows copied' });
+});
+
+test('auth: hashPassword/verifyPassword round-trip, wrong password rejected', () => {
+  const stored = hashPassword('correct horse battery staple');
+  assert.equal(verifyPassword('correct horse battery staple', stored), true);
+  assert.equal(verifyPassword('wrong password', stored), false);
+  assert.equal(verifyPassword('correct horse battery staple', 'not:a-real-hash-format'), false);
+});
+
+test('auth: session token round-trips, tampering invalidates it', () => {
+  const token = createSessionToken('alice');
+  const session = verifySession(token);
+  assert.equal(session.u, 'alice');
+  assert.equal(verifySession(null), null);
+  assert.equal(verifySession('garbage'), null);
+  assert.equal(verifySession(token.slice(0, -1) + (token.at(-1) === 'a' ? 'b' : 'a')), null);
 });

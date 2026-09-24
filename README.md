@@ -82,11 +82,23 @@ npm start          # http://localhost:8787
 
 ## Security
 
-This app has **no authentication** — anyone who can reach it can start, stop, and remove Docker
-containers on this machine, and read/write any source or target database configured through it.
-It binds to `127.0.0.1` by default (localhost-only) for exactly this reason. Set `HOST=0.0.0.0`
-only if you actually want LAN/remote access, and put your own auth/reverse-proxy in front of it
-first — the app itself won't stop anyone who can reach it.
+Login is **opt-in and off by default**. With no accounts configured, anyone who can reach this
+app can start, stop, and remove Docker containers on this machine, and read/write any source or
+target database configured through it. It binds to `127.0.0.1` by default (localhost-only) for
+exactly this reason. Set `HOST=0.0.0.0` only if you actually want LAN/remote access — and add at
+least one account first (see below) if you do, since the app itself won't stop anyone who can
+reach it until then.
+
+To require login, add an account:
+
+```
+node scripts/add-user.js <username> <password>
+```
+
+This creates `auth/users.json` (git-ignored, scrypt-hashed passwords, never plaintext). As soon
+as it has one entry, every route requires a logged-in session. Sessions are signed cookies, not
+a server-side store — set `SESSION_SECRET` to a random persistent value, or restarting the app
+logs everyone out.
 
 State-changing requests (anything but GET) are also rejected if their `Origin`/`Referer` isn't
 this app's own origin, to stop a malicious webpage open in the same browser from silently

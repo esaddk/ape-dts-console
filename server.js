@@ -14,20 +14,21 @@ const { nextStatus } = require('./lib/status.js');
 const retry = require('./lib/retry.js');
 const { checkFormFromTaskForm, cdcFormFromMigrateForm } = require('./public/formdata.js');
 const pgslot = require('./lib/pgslot.js');
+const auth = require('./lib/auth.js');
 
 const RUNS_DIR = path.join(__dirname, 'runs');
 const PORT = process.env.PORT || 8787;
-// No auth on this app — default to localhost-only so a machine with a public/LAN IP
-// doesn't expose Docker control to the network by accident. Explicit opt-in via env
-// var for anyone who actually wants LAN/remote access.
+// Login is opt-in (see the gate below) — default to localhost-only so a machine with
+// a public/LAN IP doesn't expose Docker control to the network before auth is set up.
+// Explicit opt-in via env var for anyone who actually wants LAN/remote access.
 const HOST = process.env.HOST || '127.0.0.1';
 
 const app = express();
 app.use(express.json());
 
 // ---- CSRF / drive-by protection ----
-// No auth on this app — without this, any webpage open in the same browser could
-// silently POST here (browsers don't block outbound requests, only reading a
+// Runs even when login is off — without this, any webpage open in the same browser
+// could silently POST here (browsers don't block outbound requests, only reading a
 // cross-origin response) and start/stop/remove tasks. Per the Fetch spec, browsers
 // attach Origin on same-origin requests too for unsafe methods, so a same-origin
 // fetch/form POST always carries it — only non-browser clients (curl, scripts) send
@@ -43,6 +44,49 @@ app.use((req, res, next) => {
     return res.status(403).json({ error: 'Cross-origin request blocked' });
   }
   next();
+});
+
+// ---- Login gate ----
+// Opt-in: an empty auth/users.json means "not configured" and the app stays exactly
+// as before (open access) — add the first account with `node scripts/add-user.js
+// <user> <pass>` to switch this on. Session is a signed cookie (lib/auth.js), no
+// server-side store.
+const LOGIN_HTML = fs.readFileSync(path.join(__dirname, 'public', 'login.html'), 'utf8');
+
+function parseCookies(header) {
+  const out = {};
+  (header || '').split(';').forEach((pair) => {
+    const idx = pair.indexOf('=');
+    if (idx === -1) return;
+    out[pair.slice(0, idx).trim()] = decodeURIComponent(pair.slice(idx + 1).trim());
+  });
+  return out;
+}
+
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password || !auth.verifyLogin(username, password)) {
+    return res.status(401).json({ error: 'Invalid username or password' });
+  }
+  res.cookie('session', auth.createSessionToken(username), {
+    httpOnly: true,
+    sameSite: 'strict',
+    maxAge: auth.SESSION_TTL_MS,
+  });
+  res.json({ ok: true });
+});
+
+app.post('/api/logout', (req, res) => {
+  res.clearCookie('session');
+  res.json({ ok: true });
+});
+
+app.use((req, res, next) => {
+  if (!auth.hasUsers()) return next();
+  if (req.path === '/login.html' || req.path === '/api/login') return next();
+  if (auth.verifySession(parseCookies(req.headers.cookie).session)) return next();
+  if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Not logged in' });
+  res.status(401).send(LOGIN_HTML);
 });
 
 // ---- Docker availability gate ----

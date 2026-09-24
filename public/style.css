@@ -84,6 +84,8 @@ header h1 {
 }
 .brand-divider { width: 1px; height: 1.1rem; background: var(--border); flex-shrink: 0; }
 .brand-tagline { color: var(--muted-foreground); font-size: 0.78rem; font-weight: 500; margin-right: auto; white-space: nowrap; }
+#logout-link { color: var(--muted-foreground); font-size: 0.82rem; text-decoration: none; }
+#logout-link:hover { color: var(--foreground); }
 
 @media (max-width: 640px) {
   header { padding: 0.7rem 1rem; gap: 0.6rem; }

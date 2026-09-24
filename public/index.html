@@ -16,7 +16,19 @@
   </div>
   <span class="brand-divider"></span>
   <span class="brand-tagline">Change Data Capture console</span>
+  <a href="#" id="logout-link" hidden>Log out</a>
 </header>
+<script>
+  if (document.cookie.split('; ').some((c) => c.startsWith('session='))) {
+    const link = document.getElementById('logout-link');
+    link.hidden = false;
+    link.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await fetch('/api/logout', { method: 'POST' }).catch(() => {});
+      location.reload();
+    });
+  }
+</script>
 
 <main>
   <!-- ============ Page 1: Create Task (#/tasks/new) ============ -->
