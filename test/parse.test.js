@@ -14,7 +14,7 @@ const { hashPassword, verifyPassword, createSessionToken, verifySession, addUser
 const { buildUrl, buildFormData, checkFormFromTaskForm, cdcFormFromMigrateForm, mergeFormData } = require('../public/formdata.js');
 const {
   describeEngine, describeInstance, computeSyncStatus, lagSeconds, pipelineState,
-  snapshotPipelineState, statusBucket, countByStatus, taskLabel, filterTasks, paginate, formatCreatedAt,
+  snapshotPipelineState, statusBucket, countByStatus, taskLabel, visibleTasks, filterTasks, paginate, formatCreatedAt,
 } = require('../public/view.js');
 
 const schema = require('../schema.json');
@@ -451,6 +451,28 @@ test('countByStatus: "all" equals the array length', () => {
   assert.equal(counts.stopped, 2);
   assert.equal(counts.failed, 1);
   assert.equal(counts.completed, 1);
+});
+
+test('visibleTasks: excludes check runs, hidden migrate CDC children, and removed tasks', () => {
+  const metas = [
+    { id: 'a', kind: 'cdc', status: 'running' },
+    { id: 'b', kind: 'check', status: 'completed', checkOf: 'a' },
+    { id: 'c', kind: 'cdc', status: 'running', migrateOf: 'd' },
+    { id: 'd', kind: 'migrate', status: 'completed', cdcTaskId: null },
+    { id: 'e', kind: 'cdc', status: 'removed' },
+  ];
+  assert.deepEqual(visibleTasks(metas).map((m) => m.id), ['a', 'd']);
+});
+
+test('visibleTasks: a migrate parent disappears once its CDC child reads removed, even if the parent\'s own raw status never got patched', () => {
+  const metas = [
+    // Regression: nextStatus() also reports 'removed' for a container inspect that
+    // came back empty for any reason, not just an explicit user Remove — that path
+    // never syncs the parent, so its own status can be stuck stale forever.
+    { id: 'parent', kind: 'migrate', status: 'completed', cdcTaskId: 'child' },
+    { id: 'child', kind: 'cdc', status: 'removed', migrateOf: 'parent' },
+  ];
+  assert.deepEqual(visibleTasks(metas), []);
 });
 
 test('filterTasks: matches by name and by id, case-insensitively', () => {

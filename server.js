@@ -524,7 +524,17 @@ async function reconcileStatuses() {
   const pending = [...runs.values()].filter((m) => m.status === 'starting' || m.status === 'running');
   for (const meta of pending) {
     if (!meta.containerName) continue;
-    const state = await docker.inspect(meta.id).catch(() => null);
+    // docker.inspect() already returns null only for a genuine "no such object" (the
+    // container is really gone — nextStatus treats that as removed). Any other error
+    // (daemon busy, timeout, ...) is transient — skip this tick and retry next time
+    // instead of mislabeling a live container as removed.
+    let state;
+    try {
+      state = await docker.inspect(meta.id);
+    } catch (err) {
+      console.error(`reconcile ${meta.id}: docker inspect failed, will retry:`, err.message);
+      continue;
+    }
     const patch = nextStatus(state);
     if (!patch) continue;
 

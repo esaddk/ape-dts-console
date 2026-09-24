@@ -539,12 +539,9 @@ const PageCenter = {
     const tasks = await res.json();
     // A removed task's container and control actions are gone — the server keeps its
     // meta/logs for later inspection, but Task Center has nothing left to do with it.
-    // A 'check' task is the internal run the Verify button spawns (see checkOf) — it's
-    // not something the user created directly, so it doesn't belong in this list either.
-    // Same for a migrate task's chained CDC child (migrateOf) — it's shown as phase 2
-    // of its parent's single row, not as a row of its own.
+    // See view.js's visibleTasks for what else gets excluded and why.
     this.allTasks = tasks;
-    this.tasks = tasks.filter((t) => t.status !== 'removed' && t.kind !== 'check' && !t.migrateOf);
+    this.tasks = visibleTasks(tasks);
     this.renderPills();
     this.renderList();
   },

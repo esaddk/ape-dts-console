@@ -107,6 +107,32 @@
     return kind === 'migrate' ? 'snapshot + cdc' : kind;
   }
 
+  // A migrate parent's own status only flips to 'removed' when the user removes it
+  // directly (server.js's parent cross-patch in POST /remove). If its CDC child ends
+  // up 'removed' some other way instead (nextStatus() also uses 'removed' as the
+  // generic "container inspect came back empty" signal), the parent's raw status can
+  // stay stuck on whatever it last was — 'completed', say — forever, even though the
+  // row displays the child's status. Read the same effective status the row itself
+  // shows (see app.js's activeStatus) so the row disappears exactly when the badge
+  // stops offering anything to act on.
+  function isRemoved(meta, byId) {
+    if (meta.status === 'removed') return true;
+    if (meta.kind === 'migrate' && meta.cdcTaskId) {
+      const child = byId.get(meta.cdcTaskId);
+      return !!child && child.status === 'removed';
+    }
+    return false;
+  }
+
+  // A 'check' task is the internal run the Verify button spawns (see checkOf) — it's
+  // not something the user created directly, so it doesn't belong in this list either.
+  // Same for a migrate task's chained CDC child (migrateOf) — it's shown as phase 2
+  // of its parent's single row, not as a row of its own.
+  function visibleTasks(metas) {
+    const byId = new Map(metas.map((m) => [m.id, m]));
+    return metas.filter((m) => !isRemoved(m, byId) && m.kind !== 'check' && !m.migrateOf);
+  }
+
   function filterTasks(metas, { bucket, query } = {}) {
     let list = metas;
     if (bucket && bucket !== 'all') list = list.filter((m) => statusBucket(m) === bucket);
@@ -128,6 +154,6 @@
 
   return {
     describeEngine, describeInstance, computeSyncStatus, lagSeconds, pipelineState,
-    snapshotPipelineState, statusBucket, countByStatus, taskLabel, kindLabel, filterTasks, paginate, formatCreatedAt,
+    snapshotPipelineState, statusBucket, countByStatus, taskLabel, kindLabel, visibleTasks, filterTasks, paginate, formatCreatedAt,
   };
 });
