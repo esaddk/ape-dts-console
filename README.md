@@ -80,6 +80,18 @@ npm start          # http://localhost:8787
 10. Task done or no longer needed? Go to **Task Center**, use **Stop** then **Remove** — this also
     deletes the container and its generated `runs/<id>/` directory.
 
+## Security
+
+This app has **no authentication** — anyone who can reach `http://localhost:8787` can start,
+stop, and remove Docker containers on this machine, and read/write any source or target
+database configured through it. It's meant to run on your local machine only. Do not expose it
+to an untrusted network (e.g. binding it to `0.0.0.0` behind a public IP, or a Docker port
+mapping reachable from the internet) without putting your own auth/reverse-proxy in front of it.
+
+Database credentials entered in the UI are written in plaintext to `runs/<id>/task_config.ini`
+on disk (bind-mounted into the task's container) — that directory is `.gitignore`d so it never
+gets committed, but it's still plaintext on your filesystem for as long as the task exists.
+
 ## Known limitations
 
 - **`host.docker.internal` quirk** — Test Connection runs from the Node server process on the
@@ -125,3 +137,7 @@ npm test
 Pure logic (ini round-tripping, form building, log-line parsing, status transitions) is unit
 tested. There is no automated UI/browser test — verify UI changes by hand against a running
 `npm start` and a real Docker + database setup.
+
+## License
+
+[MIT](LICENSE)

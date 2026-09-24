@@ -2,6 +2,7 @@
   "name": "ape-dts-console",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "description": "Local web UI to build task_config.ini, run ape-dts as a Docker container, and monitor it live.",
   "type": "commonjs",
   "main": "server.js",
