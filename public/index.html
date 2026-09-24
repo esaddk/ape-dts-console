@@ -16,34 +16,62 @@
   </div>
   <span class="brand-divider"></span>
   <span class="brand-tagline">Change Data Capture console</span>
-  <span id="account-info" class="account-info" hidden>
-    <span id="account-avatar" class="account-avatar"></span>
-    <span id="account-name" class="account-name"></span>
-    <span id="account-role" class="badge role"></span>
-    <span class="account-divider"></span>
-    <a href="/users.html" id="manage-users-link" class="account-link" hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      <span>Manage users</span>
-    </a>
-    <a href="#" id="logout-link" class="account-link">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
-      <span>Log out</span>
-    </a>
+  <span id="account-menu" class="account-menu" hidden>
+    <button id="account-avatar-btn" class="account-avatar-btn" aria-expanded="false" aria-haspopup="true">
+      <img id="account-avatar-img" alt="">
+    </button>
+    <div id="account-dropdown" class="account-dropdown" hidden>
+      <div class="account-dropdown-header">
+        <div id="dropdown-username" class="dropdown-username"></div>
+        <span id="dropdown-role" class="dropdown-role badge role"></span>
+      </div>
+      <div class="account-dropdown-menu">
+        <a href="/users.html" id="manage-users-item" class="dropdown-item" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Manage users</span>
+        </a>
+        <button type="button" id="logout-item" class="dropdown-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+          <span>Log out</span>
+        </button>
+      </div>
+    </div>
   </span>
 </header>
 <script>
+  const avatarBtn = document.getElementById('account-avatar-btn');
+  const dropdown = document.getElementById('account-dropdown');
+
+  function closeDropdown() {
+    dropdown.hidden = true;
+    avatarBtn.setAttribute('aria-expanded', 'false');
+  }
+
   fetch('/api/me').then((r) => (r.ok ? r.json() : null)).then((me) => {
     if (!me) return;
-    document.getElementById('account-info').hidden = false;
-    document.getElementById('account-avatar').textContent = me.username.slice(0, 1);
-    document.getElementById('account-name').textContent = me.username;
-    const roleEl = document.getElementById('account-role');
+    document.getElementById('account-menu').hidden = false;
+    document.getElementById('account-avatar-img').src =
+      `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${encodeURIComponent(me.username)}`;
+    document.getElementById('dropdown-username').textContent = me.username;
+    const roleEl = document.getElementById('dropdown-role');
     roleEl.textContent = me.role === 'admin' ? 'admin-role' : 'standard-role';
     roleEl.classList.add(me.role);
-    if (me.role === 'admin') document.getElementById('manage-users-link').hidden = false;
+    if (me.role === 'admin') document.getElementById('manage-users-item').hidden = false;
   }).catch(() => {});
-  document.getElementById('logout-link').addEventListener('click', async (e) => {
-    e.preventDefault();
+
+  avatarBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = dropdown.hidden;
+    dropdown.hidden = !open;
+    avatarBtn.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('click', (e) => {
+    if (!dropdown.hidden && !dropdown.contains(e.target)) closeDropdown();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDropdown();
+  });
+  document.getElementById('logout-item').addEventListener('click', async () => {
     await fetch('/api/logout', { method: 'POST' }).catch(() => {});
     location.reload();
   });
