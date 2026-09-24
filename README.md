@@ -17,6 +17,12 @@ Docker pulls the image from Docker Hub automatically the first time it's needed 
 yourself ahead of time: `docker pull apecloud/ape-dts:2.0.22`). You never need to build or clone
 the engine to use this UI.
 
+## Screenshots
+
+| Task Center | Create Task | Monitoring a running task |
+|---|---|---|
+| ![Task Center](screenshots/task-center.png) | ![Create Task](screenshots/create-task.png) | ![Task Detail — running](screenshots/task-detail-running.png) |
+
 ## Prerequisites
 
 - Node.js (18+)
