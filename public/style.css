@@ -432,7 +432,7 @@ details.panel > .toolbar:not(:last-child), details.panel > p:not(:last-child) { 
 .pill .pill-count { background: var(--muted); color: var(--muted-foreground); border-radius: 999px; padding: 0.05rem 0.45rem; font-size: 0.72rem; }
 .pill.active .pill-count { background: var(--accent); color: var(--accent-foreground); }
 
-.metric-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.9rem; margin-bottom: 1.1rem; }
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.9rem; margin-bottom: 1.1rem; }
 .metric-card { border: 1px solid var(--border); border-radius: calc(var(--radius) - 2px); padding: 0.95rem 1.1rem; background: var(--card); }
 .metric-card .label { font-size: 0.72rem; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; font-weight: 550; }
 .metric-card .value { font-size: 1.55rem; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; line-height: 1.15; }
