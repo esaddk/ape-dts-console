@@ -36,27 +36,7 @@ async function isDockerUp() {
   return ok;
 }
 
-const DOCKER_DOWN_HTML = `<!doctype html><html><head><meta charset="utf-8">
-<title>ape-dts UI</title>
-<style>
-  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
-         background:#0b0c0f; color:#e7e9ec; font:15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
-  .box { max-width:30rem; padding:2rem; text-align:center; }
-  h1 { font-size:1.15rem; margin:0 0 .6rem; }
-  p { color:#9aa1ac; margin:0 0 .3rem; }
-  code { background:#1b1d22; padding:.15rem .4rem; border-radius:4px; }
-</style></head><body>
-  <div class="box">
-    <h1>ape-dts backend is not running</h1>
-    <p>This UI drives ape-dts by launching each task as a Docker container — without Docker reachable, nothing here can work.</p>
-    <p>Start Docker (or Colima: <code>colima start</code>) and this page will reload automatically.</p>
-  </div>
-  <script>
-    setInterval(() => {
-      fetch('/api/health').then(r => r.json()).then(d => { if (d.dockerUp) location.reload(); }).catch(() => {});
-    }, 3000);
-  </script>
-</body></html>`;
+const DOCKER_DOWN_HTML = fs.readFileSync(path.join(__dirname, 'public', 'docker-down.html'), 'utf8');
 
 app.get('/api/health', async (req, res) => {
   res.json({ dockerUp: await isDockerUp() });
