@@ -82,11 +82,11 @@ npm start          # http://localhost:8787
 
 ## Security
 
-This app has **no authentication** — anyone who can reach `http://localhost:8787` can start,
-stop, and remove Docker containers on this machine, and read/write any source or target
-database configured through it. It's meant to run on your local machine only. Do not expose it
-to an untrusted network (e.g. binding it to `0.0.0.0` behind a public IP, or a Docker port
-mapping reachable from the internet) without putting your own auth/reverse-proxy in front of it.
+This app has **no authentication** — anyone who can reach it can start, stop, and remove Docker
+containers on this machine, and read/write any source or target database configured through it.
+It binds to `127.0.0.1` by default (localhost-only) for exactly this reason. Set `HOST=0.0.0.0`
+only if you actually want LAN/remote access, and put your own auth/reverse-proxy in front of it
+first — the app itself won't stop anyone who can reach it.
 
 Database credentials entered in the UI are written in plaintext to `runs/<id>/task_config.ini`
 on disk (bind-mounted into the task's container) — that directory is `.gitignore`d so it never

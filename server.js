@@ -17,6 +17,10 @@ const pgslot = require('./lib/pgslot.js');
 
 const RUNS_DIR = path.join(__dirname, 'runs');
 const PORT = process.env.PORT || 8787;
+// No auth on this app — default to localhost-only so a machine with a public/LAN IP
+// doesn't expose Docker control to the network by accident. Explicit opt-in via env
+// var for anyone who actually wants LAN/remote access.
+const HOST = process.env.HOST || '127.0.0.1';
 
 const app = express();
 app.use(express.json());
@@ -461,4 +465,4 @@ async function reconcileStatuses() {
 
 loadRunsFromDisk();
 setInterval(reconcileStatuses, 3000);
-app.listen(PORT, () => console.log(`ape-dts UI listening on http://localhost:${PORT}`));
+app.listen(PORT, HOST, () => console.log(`ape-dts UI listening on http://${HOST}:${PORT}`));
