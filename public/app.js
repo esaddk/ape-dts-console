@@ -3,6 +3,34 @@
 const SECTION_ORDER = ['extractor', 'filter', 'sinker', 'parallelizer', 'pipeline', 'metrics'];
 const CONN_DB_TYPES = ['mysql', 'pg', 'mongo'];
 
+// Shared by both the Task Center row actions and the Task Detail toolbar — Stop and
+// Remove are both one-way from the UI (no resume button once a task is stopped), so
+// either warrants a confirmation instead of firing on the first click.
+function confirmModal(message, { title = 'Are you sure?', confirmLabel = 'Confirm' } = {}) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('confirm-overlay');
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').textContent = message;
+    const okBtn = document.getElementById('confirm-ok-btn');
+    const cancelBtn = document.getElementById('confirm-cancel-btn');
+    okBtn.textContent = confirmLabel;
+    overlay.hidden = false;
+    function cleanup(result) {
+      overlay.hidden = true;
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      overlay.onclick = null;
+      document.removeEventListener('keydown', onKey);
+      resolve(result);
+    }
+    function onKey(e) { if (e.key === 'Escape') cleanup(false); }
+    okBtn.onclick = () => cleanup(true);
+    cancelBtn.onclick = () => cleanup(false);
+    overlay.onclick = (e) => { if (e.target === overlay) cleanup(false); };
+    document.addEventListener('keydown', onKey);
+  });
+}
+
 // Throughput/latency cards on Page 3 — field names confirmed against real monitor.log
 // (plan §2). Queue depth has one value per line, not an aggregate, hence field:null.
 const PRIMARY_METRICS = [
@@ -639,14 +667,24 @@ const PageCenter = {
         stopBtn.className = 'secondary icon-btn';
         stopBtn.title = stopBtn.ariaLabel = 'Stop task';
         stopBtn.innerHTML = ICONS.square;
-        stopBtn.onclick = async () => { await fetch(`/api/tasks/${activeId}/stop`, { method: 'POST' }); this.refresh(); };
+        stopBtn.onclick = async () => {
+          const ok = await confirmModal('Stop this task? There is no resume button — you would need to remove it and start a new one.', { title: 'Stop task', confirmLabel: 'Stop' });
+          if (!ok) return;
+          await fetch(`/api/tasks/${activeId}/stop`, { method: 'POST' });
+          this.refresh();
+        };
         inner.appendChild(stopBtn);
       } else if (activeStatus !== 'removed') {
         const rmBtn = document.createElement('button');
         rmBtn.className = 'danger icon-btn';
         rmBtn.title = rmBtn.ariaLabel = 'Remove task';
         rmBtn.innerHTML = ICONS.trash;
-        rmBtn.onclick = async () => { await fetch(`/api/tasks/${activeId}/remove`, { method: 'POST' }); this.refresh(); };
+        rmBtn.onclick = async () => {
+          const ok = await confirmModal('Remove this task? Its container is deleted and this cannot be undone.', { title: 'Remove task', confirmLabel: 'Remove' });
+          if (!ok) return;
+          await fetch(`/api/tasks/${activeId}/remove`, { method: 'POST' });
+          this.refresh();
+        };
         inner.appendChild(rmBtn);
       }
       tr.lastElementChild.replaceWith(actions);
@@ -771,8 +809,13 @@ const PageDetail = {
       this.openStream();
     }
 
-    document.getElementById('detail-status').textContent = meta.kind === 'migrate' ? activeMeta.status : meta.status;
-    document.getElementById('detail-status').className = 'badge ' + (meta.kind === 'migrate' ? activeMeta.status : meta.status);
+    this.activeStatus = meta.kind === 'migrate' ? activeMeta.status : meta.status;
+    document.getElementById('detail-status').textContent = this.activeStatus;
+    document.getElementById('detail-status').className = 'badge ' + this.activeStatus;
+    // Mirrors PageCenter's row actions: Stop only makes sense while the container is
+    // actually alive, Remove only while there's still something on disk to remove.
+    document.getElementById('detail-stop-btn').hidden = !(this.activeStatus === 'running' || this.activeStatus === 'starting');
+    document.getElementById('detail-remove-btn').hidden = this.activeStatus === 'removed';
     const srcInst = describeInstance(activeMeta.formData && activeMeta.formData.extractor && activeMeta.formData.extractor.url);
     const dstInst = describeInstance(activeMeta.formData && activeMeta.formData.sinker && activeMeta.formData.sinker.url);
     this.srcInst = srcInst;
@@ -826,11 +869,15 @@ const PageDetail = {
   },
 
   async stop() {
+    const ok = await confirmModal('Stop this task? There is no resume button — you would need to remove it and start a new one.', { title: 'Stop task', confirmLabel: 'Stop' });
+    if (!ok) return;
     await fetch(`/api/tasks/${this.streamId}/stop`, { method: 'POST' });
     this.loadMeta();
   },
 
   async remove() {
+    const ok = await confirmModal('Remove this task? Its container is deleted and this cannot be undone.', { title: 'Remove task', confirmLabel: 'Remove' });
+    if (!ok) return;
     // Mirrors PageCenter's activeId: target whichever container is actually alive
     // (the snapshot while phase 1 runs, the CDC child once phase 2 exists).
     await fetch(`/api/tasks/${this.streamId}/remove`, { method: 'POST' });
@@ -1007,7 +1054,7 @@ const PageDetail = {
       state = snapshotPipelineState(this.meta.status, rowsCopied);
     } else {
       const stale = this.lastPositionAt > 0 && Date.now() - this.lastPositionAt > 8000;
-      state = pipelineState(computeSyncStatus(this.current, this.checkpoint), stale);
+      state = pipelineState(computeSyncStatus(this.current, this.checkpoint), stale, this.activeStatus);
     }
 
     document.getElementById('pipe-diagram').className = `pipe-diagram ${state.cls}`;

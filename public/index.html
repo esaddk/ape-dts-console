@@ -360,6 +360,17 @@
   </section>
 </main>
 
+<div class="modal-overlay" id="confirm-overlay" hidden>
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+    <h3 id="confirm-title">Are you sure?</h3>
+    <p class="muted" id="confirm-message"></p>
+    <div class="modal-actions">
+      <button class="secondary" id="confirm-cancel-btn">Cancel</button>
+      <button class="danger" id="confirm-ok-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <script src="formdata.js"></script>
 <script src="view.js"></script>
 <script src="app.js"></script>

@@ -49,10 +49,16 @@
     return { label: 'catching up', cls: 'starting' };
   }
 
-  // Drives the Live Pipeline diagram/verdict on Page 3. Staleness (no position event
-  // for >8s, computed by the caller) overrides the last-known sync label, since a
-  // paused pipeline should read as "nothing is moving", not a stale "in sync".
-  function pipelineState(sync, stale) {
+  // Drives the Live Pipeline diagram/verdict on Page 3. sync/stale are both derived
+  // from the last position event the container streamed out — once the container is
+  // gone, that event stops updating but never un-happens, so "in sync"/"stale" from a
+  // stopped task's last moments alive would otherwise linger forever. Check the task's
+  // own status first: a terminal status means there is no pipeline running right now,
+  // whatever the last position line said.
+  function pipelineState(sync, stale, status) {
+    if (status === 'failed') return { cls: 'state-stale', text: 'Task failed — the pipeline is not running' };
+    if (status === 'stopped' || status === 'removed') return { cls: '', text: 'Task stopped — the pipeline is not running' };
+    if (status === 'completed') return { cls: 'state-ok state-done', text: 'Task completed — the pipeline is not running' };
     if (stale) return { cls: 'state-stale', text: 'No events received — the pipeline has gone quiet' };
     if (sync.cls === 'running') return { cls: 'state-ok', text: 'In sync — the target has caught up with the source' };
     return { cls: 'state-lag', text: sync.label };
@@ -65,7 +71,7 @@
   // instead of a source/target position diff.
   function snapshotPipelineState(status, rowsCopied) {
     const rows = rowsCopied == null ? '' : ` — ${rowsCopied} row${rowsCopied === 1 ? '' : 's'} copied`;
-    if (status === 'completed') return { cls: 'state-ok', text: `Snapshot complete${rows}` };
+    if (status === 'completed') return { cls: 'state-ok state-done', text: `Snapshot complete${rows}` };
     if (status === 'failed') return { cls: 'state-stale', text: `Snapshot failed${rows}` };
     if (status === 'stopped' || status === 'removed') return { cls: '', text: `Snapshot stopped${rows}` };
     return { cls: 'state-lag', text: `Copying…${rows}` };

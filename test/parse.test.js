@@ -532,9 +532,25 @@ test('pipelineState: staleness overrides an in-sync verdict, catching-up keeps i
   assert.equal(lagState.text, 'catching up · lag 3.2s');
 });
 
+test('pipelineState: a terminal task status overrides a stale "in sync" verdict left over from its last position event', () => {
+  // Regression: the last position event before a task stopped reported "in sync", and
+  // that never gets overwritten once the container is gone — without checking status,
+  // a stopped task keeps showing "In sync" forever.
+  const inSync = { label: 'in sync', cls: 'running' };
+  assert.deepEqual(pipelineState(inSync, false, 'stopped'), { cls: '', text: 'Task stopped — the pipeline is not running' });
+  assert.deepEqual(pipelineState(inSync, false, 'removed'), { cls: '', text: 'Task stopped — the pipeline is not running' });
+  assert.deepEqual(pipelineState(inSync, false, 'failed'), { cls: 'state-stale', text: 'Task failed — the pipeline is not running' });
+  // Completed reuses the success color (state-ok) but tags on state-done, which the CSS
+  // uses to keep the flow-dot from animating on a pipeline that isn't moving anymore.
+  assert.deepEqual(pipelineState(inSync, false, 'completed'), { cls: 'state-ok state-done', text: 'Task completed — the pipeline is not running' });
+  // A running/starting task (or no status passed) falls through to the sync-based verdict as before.
+  assert.equal(pipelineState(inSync, false, 'running').cls, 'state-ok');
+  assert.equal(pipelineState(inSync, false).cls, 'state-ok');
+});
+
 test('snapshotPipelineState: reads container status + cumulative row count instead of a position diff', () => {
-  assert.deepEqual(snapshotPipelineState('completed', 25), { cls: 'state-ok', text: 'Snapshot complete — 25 rows copied' });
-  assert.deepEqual(snapshotPipelineState('completed', 1), { cls: 'state-ok', text: 'Snapshot complete — 1 row copied' });
+  assert.deepEqual(snapshotPipelineState('completed', 25), { cls: 'state-ok state-done', text: 'Snapshot complete — 25 rows copied' });
+  assert.deepEqual(snapshotPipelineState('completed', 1), { cls: 'state-ok state-done', text: 'Snapshot complete — 1 row copied' });
   assert.deepEqual(snapshotPipelineState('failed', 10), { cls: 'state-stale', text: 'Snapshot failed — 10 rows copied' });
   assert.deepEqual(snapshotPipelineState('stopped', null), { cls: '', text: 'Snapshot stopped' });
   assert.deepEqual(snapshotPipelineState('removed', 5), { cls: '', text: 'Snapshot stopped — 5 rows copied' });
