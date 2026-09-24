@@ -258,10 +258,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="1.5"/></svg>
           Stop
         </button>
-        <button class="secondary" id="detail-verify-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
-          Verify
-        </button>
         <button class="secondary" id="detail-remove-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
           Remove
@@ -339,7 +335,13 @@
     </div>
 
     <div class="panel">
-      <h2>Data Verification</h2>
+      <div class="panel-eyebrow">
+        <h2>Data Verification</h2>
+        <button class="secondary" id="detail-verify-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+          Verify
+        </button>
+      </div>
       <p class="muted verify-direction" id="verify-direction">Compares every row on the source against the same row on the target.</p>
       <div class="toolbar" style="margin-bottom:0.6rem">
         <span class="badge" id="verify-badge">never run</span>
