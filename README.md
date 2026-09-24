@@ -58,7 +58,7 @@ you start a task.
 |---|---|---|---|---|
 | **Real-time Incremental (CDC)** | Postgres, MySQL, MongoDB | ❌ not copied | ✅ streamed live from task start | No gap on new writes, but anything already in the source before start is skipped |
 | **Full copy (snapshot)** | Postgres, MySQL, MongoDB | ✅ copied once | ❌ not captured | One-time copy only — run a CDC task afterwards for ongoing replication |
-| **Migrate (snapshot + CDC, no gap)** | **Postgres only, both sides** | ✅ copied | ✅ streamed from the snapshot's exact LSN | Zero-downtime, zero gap |
+| **Migrate (snapshot + CDC, no gap)** | **Postgres only, both sides** — MySQL/MongoDB in progress | ✅ copied | ✅ streamed from the snapshot's exact LSN | Zero-downtime, zero gap |
 
 The migrate mode reserves the replication slot and captures its LSN *before* the snapshot reads a
 single row, runs the snapshot, then automatically starts a CDC task from that exact LSN once the
