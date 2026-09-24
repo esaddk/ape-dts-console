@@ -17,16 +17,29 @@
   <span class="brand-divider"></span>
   <span class="brand-tagline">Change Data Capture console</span>
   <span id="account-info" class="account-info" hidden>
-    <span id="account-name"></span>
-    <a href="/users.html" id="manage-users-link" hidden>Manage users</a>
-    <a href="#" id="logout-link">Log out</a>
+    <span id="account-avatar" class="account-avatar"></span>
+    <span id="account-name" class="account-name"></span>
+    <span id="account-role" class="badge role"></span>
+    <span class="account-divider"></span>
+    <a href="/users.html" id="manage-users-link" class="account-link" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Manage users</span>
+    </a>
+    <a href="#" id="logout-link" class="account-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+      <span>Log out</span>
+    </a>
   </span>
 </header>
 <script>
   fetch('/api/me').then((r) => (r.ok ? r.json() : null)).then((me) => {
     if (!me) return;
     document.getElementById('account-info').hidden = false;
-    document.getElementById('account-name').textContent = `${me.username} (${me.role})`;
+    document.getElementById('account-avatar').textContent = me.username.slice(0, 1);
+    document.getElementById('account-name').textContent = me.username;
+    const roleEl = document.getElementById('account-role');
+    roleEl.textContent = me.role;
+    roleEl.classList.add(me.role);
     if (me.role === 'admin') document.getElementById('manage-users-link').hidden = false;
   }).catch(() => {});
   document.getElementById('logout-link').addEventListener('click', async (e) => {
