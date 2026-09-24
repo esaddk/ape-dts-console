@@ -1,27 +1,20 @@
 #!/usr/bin/env node
 'use strict';
-// Adds or updates one account in auth/users.json. Usage:
-//   node scripts/add-user.js <username> <password>
-const fs = require('fs');
-const path = require('path');
-const { hashPassword } = require('../lib/auth.js');
+// Rescue tool: add/update an account straight in auth/users.json, bypassing the
+// web UI's setup/admin-panel flow (e.g. to regain access if locked out). Usage:
+//   node scripts/add-user.js <username> <password> [admin|user]
+const { addUser, listUsers } = require('../lib/auth.js');
 
-const [username, password] = process.argv.slice(2);
+const [username, password, role = 'admin'] = process.argv.slice(2);
 if (!username || !password) {
-  console.error('Usage: node scripts/add-user.js <username> <password>');
+  console.error('Usage: node scripts/add-user.js <username> <password> [admin|user]');
+  process.exit(1);
+}
+if (role !== 'admin' && role !== 'user') {
+  console.error('Role must be "admin" or "user"');
   process.exit(1);
 }
 
-const usersPath = path.join(__dirname, '..', 'auth', 'users.json');
-fs.mkdirSync(path.dirname(usersPath), { recursive: true });
-let users = {};
-try {
-  users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
-} catch {
-  /* no file yet */
-}
-
-const isUpdate = Object.prototype.hasOwnProperty.call(users, username);
-users[username] = hashPassword(password);
-fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
-console.log(`${isUpdate ? 'Updated' : 'Added'} user "${username}" in ${usersPath}`);
+const existed = listUsers().some((u) => u.username === username);
+addUser(username, password, role);
+console.log(`${existed ? 'Updated' : 'Added'} user "${username}" (${role})`);

@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ape-dts UI — Users</title>
+<style>
+  body { margin:0; min-height:100vh; background:#fafafa; color:#09090b;
+         font:15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+         -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:32rem; margin:0 auto; padding:2.5rem 1.5rem; }
+  .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; }
+  h1 { font-size:1.1rem; margin:0; }
+  a.back { color:#71717a; font-size:0.82rem; text-decoration:none; }
+  a.back:hover { color:#09090b; }
+  .card { background:#ffffff; border:1px solid #e4e4e7; border-radius:0.625rem;
+          box-shadow:0 1px 2px rgba(0,0,0,0.04); padding:1.5rem; margin-bottom:1.25rem; }
+  .card h2 { font-size:0.95rem; margin:0 0 1rem; }
+  table { width:100%; border-collapse:collapse; font-size:0.88rem; }
+  th, td { text-align:left; padding:0.4rem 0; border-bottom:1px solid #f4f4f5; }
+  th { color:#71717a; font-weight:500; font-size:0.78rem; }
+  label { display:block; font-size:0.82rem; color:#71717a; margin:0 0 0.3rem; }
+  input, select { width:100%; box-sizing:border-box; padding:0.5rem 0.65rem; margin-bottom:1rem;
+          font-size:0.9rem; border:1px solid #e4e4e7; border-radius:0.4rem; background:#fff; color:#09090b; }
+  input:focus, select:focus { outline:none; border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,0.15); }
+  button { padding:0.5rem 1rem; font-size:0.88rem; font-weight:600; color:#fafafa;
+           background:#18181b; border:none; border-radius:0.4rem; cursor:pointer; }
+  button:disabled { opacity:0.6; cursor:default; }
+  .error { color:#dc2626; font-size:0.82rem; margin:-0.5rem 0 1rem; min-height:1.1em; }
+  .msg { color:#16a34a; font-size:0.82rem; margin:-0.5rem 0 1rem; min-height:1.1em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>Users</h1>
+    <a class="back" href="/">&larr; Back to app</a>
+  </div>
+
+  <div class="card">
+    <h2>Existing accounts</h2>
+    <table>
+      <thead><tr><th>Username</th><th>Role</th></tr></thead>
+      <tbody id="user-rows"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Add account</h2>
+    <form id="add-form">
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="off" required autofocus>
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="new-password" required minlength="8">
+      <label for="role">Role</label>
+      <select id="role" name="role">
+        <option value="user">Standard user</option>
+        <option value="admin">Admin</option>
+      </select>
+      <p class="error" id="error"></p>
+      <p class="msg" id="msg"></p>
+      <button type="submit">Add account</button>
+    </form>
+  </div>
+</div>
+<script>
+  const rows = document.getElementById('user-rows');
+  const form = document.getElementById('add-form');
+  const errorEl = document.getElementById('error');
+  const msgEl = document.getElementById('msg');
+
+  async function loadUsers() {
+    const res = await fetch('/api/users');
+    if (!res.ok) { rows.innerHTML = '<tr><td colspan="2">Could not load users</td></tr>'; return; }
+    const users = await res.json();
+    rows.innerHTML = users.map((u) =>
+      `<tr><td>${escapeHtml(u.username)}</td><td>${escapeHtml(u.role)}</td></tr>`
+    ).join('');
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.textContent = '';
+    msgEl.textContent = '';
+    const button = form.querySelector('button');
+    button.disabled = true;
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: form.username.value,
+          password: form.password.value,
+          role: form.role.value,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        errorEl.textContent = body.error || 'Could not add account';
+        return;
+      }
+      msgEl.textContent = `Added "${form.username.value}".`;
+      form.reset();
+      loadUsers();
+    } catch {
+      errorEl.textContent = 'Could not reach the server';
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  loadUsers();
+</script>
+</body>
+</html>

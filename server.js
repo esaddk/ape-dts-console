@@ -18,9 +18,9 @@ const auth = require('./lib/auth.js');
 
 const RUNS_DIR = path.join(__dirname, 'runs');
 const PORT = process.env.PORT || 8787;
-// Login is opt-in (see the gate below) — default to localhost-only so a machine with
-// a public/LAN IP doesn't expose Docker control to the network before auth is set up.
-// Explicit opt-in via env var for anyone who actually wants LAN/remote access.
+// Login is required from first run (see the setup gate below), but default to
+// localhost-only anyway — belt and suspenders against exposing Docker control before
+// setup is complete. Explicit opt-in via env var for anyone who wants LAN/remote access.
 const HOST = process.env.HOST || '127.0.0.1';
 
 const app = express();
@@ -46,11 +46,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// ---- Login gate ----
-// Opt-in: an empty auth/users.json means "not configured" and the app stays exactly
-// as before (open access) — add the first account with `node scripts/add-user.js
-// <user> <pass>` to switch this on. Session is a signed cookie (lib/auth.js), no
-// server-side store.
+// ---- Setup + login gates ----
+// A brand-new install has no accounts, so the first visitor is forced through
+// /setup.html to create the admin account (rather than left with open access, or
+// stuck needing shell access to run a seed script). Once that account exists, every
+// route requires a logged-in session, and the admin can add more from /users.html.
+// Sessions are a signed cookie (lib/auth.js), no server-side store.
+const SETUP_HTML = fs.readFileSync(path.join(__dirname, 'public', 'setup.html'), 'utf8');
 const LOGIN_HTML = fs.readFileSync(path.join(__dirname, 'public', 'login.html'), 'utf8');
 
 function parseCookies(header) {
@@ -63,12 +65,35 @@ function parseCookies(header) {
   return out;
 }
 
+function currentSession(req) {
+  return auth.verifySession(parseCookies(req.headers.cookie).session);
+}
+
+app.post('/api/setup', (req, res) => {
+  if (auth.hasUsers()) return res.status(403).json({ error: 'Already set up' });
+  const { username, password } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
+  if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  auth.addUser(username, password, 'admin');
+  res.cookie('session', auth.createSessionToken(username, 'admin'), {
+    httpOnly: true,
+    sameSite: 'strict',
+    maxAge: auth.SESSION_TTL_MS,
+  });
+  res.json({ ok: true });
+});
+
+app.use((req, res, next) => {
+  if (auth.hasUsers()) return next();
+  if (req.path === '/setup.html' || req.path === '/api/setup') return next();
+  res.status(200).send(SETUP_HTML);
+});
+
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body || {};
-  if (!username || !password || !auth.verifyLogin(username, password)) {
-    return res.status(401).json({ error: 'Invalid username or password' });
-  }
-  res.cookie('session', auth.createSessionToken(username), {
+  const user = username && password && auth.verifyLogin(username, password);
+  if (!user) return res.status(401).json({ error: 'Invalid username or password' });
+  res.cookie('session', auth.createSessionToken(user.username, user.role), {
     httpOnly: true,
     sameSite: 'strict',
     maxAge: auth.SESSION_TTL_MS,
@@ -81,10 +106,32 @@ app.post('/api/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+app.get('/api/me', (req, res) => {
+  const session = currentSession(req);
+  if (!session) return res.status(401).json({ error: 'Not logged in' });
+  res.json({ username: session.u, role: session.role });
+});
+
+function requireAdmin(req, res, next) {
+  const session = currentSession(req);
+  if (!session || session.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+  next();
+}
+
+app.get('/api/users', requireAdmin, (req, res) => res.json(auth.listUsers()));
+
+app.post('/api/users', requireAdmin, (req, res) => {
+  const { username, password, role } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
+  if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  if (role !== 'admin' && role !== 'user') return res.status(400).json({ error: 'Role must be "admin" or "user"' });
+  auth.addUser(username, password, role);
+  res.json({ ok: true });
+});
+
 app.use((req, res, next) => {
-  if (!auth.hasUsers()) return next();
-  if (req.path === '/login.html' || req.path === '/api/login') return next();
-  if (auth.verifySession(parseCookies(req.headers.cookie).session)) return next();
+  if (['/login.html', '/api/login', '/setup.html', '/api/setup'].includes(req.path)) return next();
+  if (currentSession(req)) return next();
   if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Not logged in' });
   res.status(401).send(LOGIN_HTML);
 });

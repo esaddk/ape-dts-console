@@ -82,23 +82,20 @@ npm start          # http://localhost:8787
 
 ## Security
 
-Login is **opt-in and off by default**. With no accounts configured, anyone who can reach this
-app can start, stop, and remove Docker containers on this machine, and read/write any source or
-target database configured through it. It binds to `127.0.0.1` by default (localhost-only) for
-exactly this reason. Set `HOST=0.0.0.0` only if you actually want LAN/remote access — and add at
-least one account first (see below) if you do, since the app itself won't stop anyone who can
-reach it until then.
-
-To require login, add an account:
+Login is required. On first run, with no accounts yet, the app forces the first visitor through
+a "create admin account" page instead of leaving Docker control open to anyone who can reach it.
+That admin can then add more accounts (admin or standard user) from the "Manage users" link in
+the header, or you can seed one from the CLI:
 
 ```
-node scripts/add-user.js <username> <password>
+node scripts/add-user.js <username> <password> [admin|user]
 ```
 
-This creates `auth/users.json` (git-ignored, scrypt-hashed passwords, never plaintext). As soon
-as it has one entry, every route requires a logged-in session. Sessions are signed cookies, not
-a server-side store — set `SESSION_SECRET` to a random persistent value, or restarting the app
-logs everyone out.
+Accounts live in `auth/users.json` (git-ignored, scrypt-hashed passwords, never plaintext).
+Sessions are signed cookies, not a server-side store — set `SESSION_SECRET` to a random
+persistent value, or restarting the app logs everyone out. It still binds to `127.0.0.1` by
+default (localhost-only) as a second layer; set `HOST=0.0.0.0` only if you actually want
+LAN/remote access.
 
 State-changing requests (anything but GET) are also rejected if their `Origin`/`Referer` isn't
 this app's own origin, to stop a malicious webpage open in the same browser from silently

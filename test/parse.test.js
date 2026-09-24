@@ -10,7 +10,7 @@ const { parseCheckLine, aggregateCheckLogs, readCheckResult } = require('../lib/
 const { nextStatus } = require('../lib/status.js');
 const { isTransient, shouldRetry, MAX_RETRIES } = require('../lib/retry.js');
 const { dockerizeUrl } = require('../lib/docker.js');
-const { hashPassword, verifyPassword, createSessionToken, verifySession } = require('../lib/auth.js');
+const { hashPassword, verifyPassword, createSessionToken, verifySession, addUser, listUsers, verifyLogin, hasUsers } = require('../lib/auth.js');
 const { buildUrl, buildFormData, checkFormFromTaskForm, cdcFormFromMigrateForm, mergeFormData } = require('../public/formdata.js');
 const {
   describeEngine, describeInstance, computeSyncStatus, lagSeconds, pipelineState,
@@ -528,10 +528,33 @@ test('auth: hashPassword/verifyPassword round-trip, wrong password rejected', ()
 });
 
 test('auth: session token round-trips, tampering invalidates it', () => {
-  const token = createSessionToken('alice');
+  const token = createSessionToken('alice', 'admin');
   const session = verifySession(token);
   assert.equal(session.u, 'alice');
+  assert.equal(session.role, 'admin');
   assert.equal(verifySession(null), null);
   assert.equal(verifySession('garbage'), null);
   assert.equal(verifySession(token.slice(0, -1) + (token.at(-1) === 'a' ? 'b' : 'a')), null);
+});
+
+test('auth: addUser/listUsers/verifyLogin round-trip with roles', () => {
+  // addUser/listUsers write the real (git-ignored) auth/users.json — snapshot and
+  // restore it so running the test suite never disturbs an actual deployment's accounts.
+  const usersPath = path.join(__dirname, '..', 'auth', 'users.json');
+  const before = fs.existsSync(usersPath) ? fs.readFileSync(usersPath, 'utf8') : null;
+  try {
+    fs.rmSync(usersPath, { force: true });
+    assert.equal(hasUsers(), false);
+    addUser('admin1', 'adminpass123', 'admin');
+    addUser('user1', 'userpass123', 'user');
+    assert.equal(hasUsers(), true);
+    const users = listUsers().sort((a, b) => a.username.localeCompare(b.username));
+    assert.deepEqual(users, [{ username: 'admin1', role: 'admin' }, { username: 'user1', role: 'user' }]);
+    assert.deepEqual(verifyLogin('admin1', 'adminpass123'), { username: 'admin1', role: 'admin' });
+    assert.equal(verifyLogin('admin1', 'wrong'), null);
+    assert.equal(verifyLogin('nobody', 'x'), null);
+  } finally {
+    if (before === null) fs.rmSync(usersPath, { force: true });
+    else fs.writeFileSync(usersPath, before);
+  }
 });

@@ -16,18 +16,24 @@
   </div>
   <span class="brand-divider"></span>
   <span class="brand-tagline">Change Data Capture console</span>
-  <a href="#" id="logout-link" hidden>Log out</a>
+  <span id="account-info" class="account-info" hidden>
+    <span id="account-name"></span>
+    <a href="/users.html" id="manage-users-link" hidden>Manage users</a>
+    <a href="#" id="logout-link">Log out</a>
+  </span>
 </header>
 <script>
-  if (document.cookie.split('; ').some((c) => c.startsWith('session='))) {
-    const link = document.getElementById('logout-link');
-    link.hidden = false;
-    link.addEventListener('click', async (e) => {
-      e.preventDefault();
-      await fetch('/api/logout', { method: 'POST' }).catch(() => {});
-      location.reload();
-    });
-  }
+  fetch('/api/me').then((r) => (r.ok ? r.json() : null)).then((me) => {
+    if (!me) return;
+    document.getElementById('account-info').hidden = false;
+    document.getElementById('account-name').textContent = `${me.username} (${me.role})`;
+    if (me.role === 'admin') document.getElementById('manage-users-link').hidden = false;
+  }).catch(() => {});
+  document.getElementById('logout-link').addEventListener('click', async (e) => {
+    e.preventDefault();
+    await fetch('/api/logout', { method: 'POST' }).catch(() => {});
+    location.reload();
+  });
 </script>
 
 <main>
