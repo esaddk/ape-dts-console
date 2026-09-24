@@ -38,7 +38,7 @@
     document.getElementById('account-avatar').textContent = me.username.slice(0, 1);
     document.getElementById('account-name').textContent = me.username;
     const roleEl = document.getElementById('account-role');
-    roleEl.textContent = me.role;
+    roleEl.textContent = me.role === 'admin' ? 'admin-role' : 'standard-role';
     roleEl.classList.add(me.role);
     if (me.role === 'admin') document.getElementById('manage-users-link').hidden = false;
   }).catch(() => {});

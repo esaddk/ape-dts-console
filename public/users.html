@@ -74,7 +74,7 @@
     if (!res.ok) { rows.innerHTML = '<tr><td colspan="2">Could not load users</td></tr>'; return; }
     const users = await res.json();
     rows.innerHTML = users.map((u) =>
-      `<tr><td>${escapeHtml(u.username)}</td><td>${escapeHtml(u.role)}</td></tr>`
+      `<tr><td>${escapeHtml(u.username)}</td><td>${escapeHtml(u.role === 'admin' ? 'admin-role' : 'standard-role')}</td></tr>`
     ).join('');
   }
 
