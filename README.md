@@ -95,7 +95,8 @@ you start a task.
     "in sync" (CDC) or runs to completion (snapshot, status becomes `completed`). Use
     **Data Verification** any time to diff every source row against the target.
 10. Task done or no longer needed? Go to **Task Center**, use **Stop** then **Remove** — this also
-    deletes the container and its generated `runs/<id>/` directory.
+    deletes the container and its generated `runs/<id>/` directory (config + logs), the same cleanup
+    the upstream engine's own `dtscli delete` does.
 
 ## Security
 
@@ -121,6 +122,8 @@ POSTing here — but this is a drive-by mitigation, not real auth.
 Database credentials entered in the UI are written in plaintext to `runs/<id>/task_config.ini`
 on disk (bind-mounted into the task's container) — that directory is `.gitignore`d so it never
 gets committed, but it's still plaintext on your filesystem for as long as the task exists.
+**Remove** in Task Center deletes that directory (config + logs) along with the container, so
+credentials don't linger after you're done with a task.
 
 ## Known limitations
 

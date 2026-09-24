@@ -432,6 +432,9 @@ app.post('/api/tasks/:id/remove', async (req, res) => {
     meta.status = 'removed';
     meta.containerName = null;
     saveMeta(meta);
+    // Mirrors dtscli's `delete` command in the upstream engine: wipe the task's own
+    // directory (task_config.ini + logs) so plaintext credentials don't linger on disk.
+    fs.rmSync(runPaths(meta.id).dir, { recursive: true, force: true });
 
     // Removing a migrate task's CDC child (the container the UI actually targets,
     // see streamId/activeId in app.js) must also remove the parent row, or the
@@ -443,6 +446,7 @@ app.post('/api/tasks/:id/remove', async (req, res) => {
       const patchedParent = { ...parent, status: 'removed', containerName: null };
       runs.set(parent.id, patchedParent);
       saveMeta(patchedParent);
+      fs.rmSync(runPaths(parent.id).dir, { recursive: true, force: true });
     }
 
     res.json(meta);
