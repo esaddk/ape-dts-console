@@ -45,7 +45,7 @@ app.get('/api/health', async (req, res) => {
 app.use(async (req, res, next) => {
   if (await isDockerUp()) return next();
   if (req.path.startsWith('/api/')) {
-    return res.status(503).json({ error: 'Docker is not reachable — ape-dts backend cannot run tasks. Start Docker and retry.' });
+    return res.status(503).json({ error: 'Docker is not reachable — this UI launches tasks as Docker containers and needs it running. Start Docker and retry.' });
   }
   res.status(503).send(DOCKER_DOWN_HTML);
 });
