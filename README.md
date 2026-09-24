@@ -7,19 +7,36 @@ row-level data verification — without touching the CLI or the ini format by ha
 No build step, no framework, no external JS dependencies in the browser. Static HTML/CSS/JS served
 by a small Express server that also drives Docker and tails log files.
 
+### This repo is UI only — the engine comes from a Docker image, not a clone
+
+This repository does **not** contain the [ape-dts](https://github.com/apecloud/ape-dts) engine
+source code, and cloning it does not clone the engine too. The engine ships as a prebuilt Docker
+image, `apecloud/ape-dts:2.0.22` (version pinned in `lib/docker.js`) — when you start a task from
+the UI, the Node server just runs `docker run` with that image and a generated `task_config.ini`.
+Docker pulls the image from Docker Hub automatically the first time it's needed (or pull it
+yourself ahead of time: `docker pull apecloud/ape-dts:2.0.22`). You never need to build or clone
+the engine to use this UI.
+
 ## Prerequisites
 
 - Node.js (18+)
-- Docker, running and reachable from this machine (`docker ps` must work)
+- Docker, running and reachable from this machine (`docker ps` must work), with network access to
+  pull images from Docker Hub the first time a task runs
 - Network access from inside Docker containers to your source/target databases — see
   [host.docker.internal](#hostdockerinternal-quirk) below
 
 ## Run it
 
 ```bash
+git clone <this-repo-url>
+cd ape-dts-console
 npm install
 npm start          # http://localhost:8787
 ```
+
+First run walks you through creating an admin account (see [Security](#security)) — no separate
+engine install step. The pinned `apecloud/ape-dts` image is pulled automatically the first time
+you start a task.
 
 ## What it does
 
