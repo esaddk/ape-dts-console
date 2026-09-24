@@ -20,6 +20,56 @@ const PORT = process.env.PORT || 8787;
 
 const app = express();
 app.use(express.json());
+
+// ---- Docker availability gate ----
+// Every ape-dts task runs as its own Docker container (docker.start() below) — with
+// no daemon reachable this app can't do the one thing it exists for. Block the whole
+// UI behind a "backend not running" page instead of letting it load into a state
+// where every action fails, cached briefly so a full page load's handful of asset
+// requests don't each spawn a `docker version` process.
+const DOCKER_PING_TTL_MS = 2000;
+let dockerPingCache = { ok: false, ts: 0 };
+async function isDockerUp() {
+  if (Date.now() - dockerPingCache.ts < DOCKER_PING_TTL_MS) return dockerPingCache.ok;
+  const ok = await docker.ping();
+  dockerPingCache = { ok, ts: Date.now() };
+  return ok;
+}
+
+const DOCKER_DOWN_HTML = `<!doctype html><html><head><meta charset="utf-8">
+<title>ape-dts UI</title>
+<style>
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+         background:#0b0c0f; color:#e7e9ec; font:15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+  .box { max-width:30rem; padding:2rem; text-align:center; }
+  h1 { font-size:1.15rem; margin:0 0 .6rem; }
+  p { color:#9aa1ac; margin:0 0 .3rem; }
+  code { background:#1b1d22; padding:.15rem .4rem; border-radius:4px; }
+</style></head><body>
+  <div class="box">
+    <h1>ape-dts backend is not running</h1>
+    <p>This UI drives ape-dts by launching each task as a Docker container — without Docker reachable, nothing here can work.</p>
+    <p>Start Docker (or Colima: <code>colima start</code>) and this page will reload automatically.</p>
+  </div>
+  <script>
+    setInterval(() => {
+      fetch('/api/health').then(r => r.json()).then(d => { if (d.dockerUp) location.reload(); }).catch(() => {});
+    }, 3000);
+  </script>
+</body></html>`;
+
+app.get('/api/health', async (req, res) => {
+  res.json({ dockerUp: await isDockerUp() });
+});
+
+app.use(async (req, res, next) => {
+  if (await isDockerUp()) return next();
+  if (req.path.startsWith('/api/')) {
+    return res.status(503).json({ error: 'Docker is not reachable — ape-dts backend cannot run tasks. Start Docker and retry.' });
+  }
+  res.status(503).send(DOCKER_DOWN_HTML);
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ---- run registry: in-memory, backed by runs/<id>/meta.json ----
