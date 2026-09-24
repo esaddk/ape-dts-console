@@ -88,6 +88,10 @@ It binds to `127.0.0.1` by default (localhost-only) for exactly this reason. Set
 only if you actually want LAN/remote access, and put your own auth/reverse-proxy in front of it
 first — the app itself won't stop anyone who can reach it.
 
+State-changing requests (anything but GET) are also rejected if their `Origin`/`Referer` isn't
+this app's own origin, to stop a malicious webpage open in the same browser from silently
+POSTing here — but this is a drive-by mitigation, not real auth.
+
 Database credentials entered in the UI are written in plaintext to `runs/<id>/task_config.ini`
 on disk (bind-mounted into the task's container) — that directory is `.gitignore`d so it never
 gets committed, but it's still plaintext on your filesystem for as long as the task exists.

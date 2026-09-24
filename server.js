@@ -25,6 +25,26 @@ const HOST = process.env.HOST || '127.0.0.1';
 const app = express();
 app.use(express.json());
 
+// ---- CSRF / drive-by protection ----
+// No auth on this app — without this, any webpage open in the same browser could
+// silently POST here (browsers don't block outbound requests, only reading a
+// cross-origin response) and start/stop/remove tasks. Per the Fetch spec, browsers
+// attach Origin on same-origin requests too for unsafe methods, so a same-origin
+// fetch/form POST always carries it — only non-browser clients (curl, scripts) send
+// neither Origin nor Referer, and those are left alone rather than broken.
+const ALLOWED_ORIGINS = new Set([`http://127.0.0.1:${PORT}`, `http://localhost:${PORT}`, `http://${HOST}:${PORT}`]);
+app.use((req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD') return next();
+  let origin = req.headers.origin;
+  if (!origin && req.headers.referer) {
+    try { origin = new URL(req.headers.referer).origin; } catch { /* malformed referer, ignore */ }
+  }
+  if (origin && !ALLOWED_ORIGINS.has(origin)) {
+    return res.status(403).json({ error: 'Cross-origin request blocked' });
+  }
+  next();
+});
+
 // ---- Docker availability gate ----
 // Every ape-dts task runs as its own Docker container (docker.start() below) — with
 // no daemon reachable this app can't do the one thing it exists for. Block the whole
