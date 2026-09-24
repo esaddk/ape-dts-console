@@ -31,6 +31,12 @@
 
 * { box-sizing: border-box; }
 
+/* Any element styled with its own `display` (flex, grid, ...) has the same CSS
+   specificity as the browser's default `[hidden] { display: none }` rule, and being
+   an author rule it wins — so `el.hidden = true` silently stops hiding anything with
+   a display override unless this beats it back. */
+[hidden] { display: none !important; }
+
 ::selection { background: var(--accent); color: var(--accent-foreground); }
 
 body {
