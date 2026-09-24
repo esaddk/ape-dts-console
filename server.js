@@ -85,7 +85,7 @@ app.post('/api/setup', (req, res) => {
 
 app.use((req, res, next) => {
   if (auth.hasUsers()) return next();
-  if (req.path === '/setup.html' || req.path === '/api/setup') return next();
+  if (req.path === '/setup.html' || req.path === '/api/setup' || req.path === '/favicon.svg') return next();
   res.status(200).send(SETUP_HTML);
 });
 
@@ -130,7 +130,7 @@ app.post('/api/users', requireAdmin, (req, res) => {
 });
 
 app.use((req, res, next) => {
-  if (['/login.html', '/api/login', '/setup.html', '/api/setup'].includes(req.path)) return next();
+  if (['/login.html', '/api/login', '/setup.html', '/api/setup', '/favicon.svg'].includes(req.path)) return next();
   if (currentSession(req)) return next();
   if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Not logged in' });
   res.status(401).send(LOGIN_HTML);
