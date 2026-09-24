@@ -10,9 +10,9 @@ const { parseCheckLine, aggregateCheckLogs, readCheckResult } = require('../lib/
 const { nextStatus } = require('../lib/status.js');
 const { isTransient, shouldRetry, MAX_RETRIES } = require('../lib/retry.js');
 const { dockerizeUrl } = require('../lib/docker.js');
-const { buildUrl, buildFormData, buildCheckForm, checkFormFromTaskForm, cdcFormFromMigrateForm, mergeFormData } = require('../public/formdata.js');
+const { buildUrl, buildFormData, checkFormFromTaskForm, cdcFormFromMigrateForm, mergeFormData } = require('../public/formdata.js');
 const {
-  describeEngine, describeDatabases, describeInstance, computeSyncStatus, lagSeconds, pipelineState,
+  describeEngine, describeInstance, computeSyncStatus, lagSeconds, pipelineState,
   snapshotPipelineState, statusBucket, countByStatus, taskLabel, filterTasks, paginate, formatCreatedAt,
 } = require('../public/view.js');
 
@@ -227,44 +227,6 @@ test('mergeFormData: an explicit Advanced-panel override wins over the simple-pa
   assert.equal(merged.extractor.url, base.extractor.url, 'sections the override never mentions should pass through unchanged');
 });
 
-test('buildCheckForm: pg — snapshot extract_type, sink_type=check, rdb_check parallel_type, no [checker] key, validates', () => {
-  const formData = buildCheckForm({
-    source: { db_type: 'pg', host: 'src-pg', port: 5432, username: 'postgres', password: 'postgres', database: 'postgres', schema: 'test_db_1', tables: ['tb_1'] },
-    dest: { db_type: 'pg', host: 'dst-pg', port: 5432, username: 'postgres', password: 'postgres', database: 'postgres' },
-  });
-  assert.equal(formData.extractor.extract_type, 'snapshot');
-  assert.equal(formData.sinker.sink_type, 'check');
-  assert.equal(formData.sinker.batch_size, 200);
-  assert.equal(formData.parallelizer.parallel_type, 'rdb_check');
-  assert.deepEqual(formData.filter.do_events, ['insert']);
-  assert.equal(formData.extractor.server_id, undefined, 'snapshot extract_type must not carry a cdc-only field');
-  assert.equal(formData.extractor.slot_name, undefined, 'snapshot extract_type must not carry a cdc-only field');
-  assert.equal(formData.checker, undefined, 'no [checker] section — 2.0.26-only shape the pinned 2.0.22 image cannot parse');
-
-  const errors = validate(formData, schema);
-  assert.deepEqual(errors, [], 'a check form built this way must pass the same validate() the server runs');
-});
-
-test('buildCheckForm: mysql — same shape, rdb_check parallel_type', () => {
-  const formData = buildCheckForm({
-    source: { db_type: 'mysql', host: 'src-mysql', port: 3306, username: 'root', password: '123456', database: 'test_db', tables: [] },
-    dest: { db_type: 'mysql', host: 'dst-mysql', port: 3306, username: 'root', password: '123456', database: 'test_db' },
-  });
-  assert.equal(formData.extractor.extract_type, 'snapshot');
-  assert.equal(formData.sinker.sink_type, 'check');
-  assert.equal(formData.parallelizer.parallel_type, 'rdb_check');
-  assert.deepEqual(validate(formData, schema), []);
-});
-
-test('buildCheckForm: mongo — parallel_type is "mongo", not "rdb_check"', () => {
-  const formData = buildCheckForm({
-    source: { db_type: 'mongo', host: 'src-mongo', port: 27017, database: 'inventory', tables: [] },
-    dest: { db_type: 'mongo', host: 'dst-mongo', port: 27017, database: 'inventory' },
-  });
-  assert.equal(formData.parallelizer.parallel_type, 'mongo');
-  assert.deepEqual(validate(formData, schema), []);
-});
-
 test('checkFormFromTaskForm: derives from a real CDC formData, reuses both URLs verbatim, drops slot_name, validates', () => {
   const cdcForm = buildFormData({
     source: { db_type: 'pg', host: 'src-pg', port: 5432, username: 'postgres', password: 'postgres', database: 'postgres', schema: 'test_db_1', tables: ['tb_1', 'tb_2'] },
@@ -309,10 +271,11 @@ test('cdcFormFromMigrateForm: patches a snapshot form into the migrate flow\'s C
 });
 
 test('check task ini round-trip: sink_type=check and parallel_type=rdb_check survive toIni/parseIni, no [checker] section', () => {
-  const formData = buildCheckForm({
+  const cdcForm = buildFormData({
     source: { db_type: 'pg', host: 'src-pg', port: 5432, username: 'postgres', password: 'postgres', database: 'postgres', schema: 'test_db_1', tables: ['tb_1'] },
     dest: { db_type: 'pg', host: 'dst-pg', port: 5432, username: 'postgres', password: 'postgres', database: 'postgres' },
   });
+  const formData = checkFormFromTaskForm(cdcForm);
   const ini = toIni(formData, schema);
   assert.match(ini, /sink_type=check/);
   assert.match(ini, /parallel_type=rdb_check/);

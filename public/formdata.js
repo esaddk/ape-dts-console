@@ -31,8 +31,8 @@
     return h;
   }
 
-  // Shared by buildFormData and buildCheckForm — do_dbs/do_tbs derivation only
-  // differs by db_type (pg is schema-qualified, mysql/mongo are database-qualified).
+  // do_dbs/do_tbs derivation only differs by db_type (pg is schema-qualified,
+  // mysql/mongo are database-qualified).
   function buildFilter(source, doEvents) {
     const filter = { do_events: doEvents };
     const tables = (source.tables || []).filter(Boolean);
@@ -91,38 +91,6 @@
     const parallelizer = extractType === 'snapshot'
       ? { parallel_type: 'snapshot', parallel_size: 2 }
       : { parallel_type: 'rdb_merge', parallel_size: 2 };
-    const pipeline = { buffer_size: 4000, checkpoint_interval_secs: 1 };
-
-    return { extractor, filter, sinker, parallelizer, pipeline, metrics: {}, metrics_enabled: false };
-  }
-
-  // Standalone data-verification task: extract_type=snapshot (one-shot), sink_type=check
-  // (diffs against the target instead of writing), do_events=['insert'] (check ignores the
-  // rest). Deliberately does NOT set check_log_dir — the container default
-  // (LOG_DIR_PLACEHOLDER/check) already lands under the same -v ${logsDir}:/logs/ mount
-  // a CDC task uses. No [checker] section: that's a 2.0.26 shape the pinned 2.0.22 image
-  // (lib/docker.js) can't parse — batch size instead goes on [sinker], same as a write task.
-  function buildCheckForm({ source, dest }) {
-    const extractor = {
-      db_type: source.db_type,
-      extract_type: 'snapshot',
-      url: buildUrl(source),
-      username: source.username || '',
-      password: source.password || '',
-    };
-
-    const filter = buildFilter(source, ['insert']);
-
-    const sinker = {
-      db_type: dest.db_type,
-      sink_type: 'check',
-      url: buildUrl(dest),
-      username: dest.username || '',
-      password: dest.password || '',
-      batch_size: 200,
-    };
-
-    const parallelizer = { parallel_type: checkParallelType(source.db_type), parallel_size: 2 };
     const pipeline = { buffer_size: 4000, checkpoint_interval_secs: 1 };
 
     return { extractor, filter, sinker, parallelizer, pipeline, metrics: {}, metrics_enabled: false };
@@ -210,5 +178,5 @@
     return result;
   }
 
-  return { buildUrl, buildFormData, buildCheckForm, checkFormFromTaskForm, cdcFormFromMigrateForm, mergeFormData, DEFAULT_PORTS };
+  return { buildUrl, buildFormData, checkFormFromTaskForm, cdcFormFromMigrateForm, mergeFormData, DEFAULT_PORTS };
 });

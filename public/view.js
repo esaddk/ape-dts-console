@@ -6,19 +6,13 @@
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else Object.assign(global, factory());
 })(typeof window !== 'undefined' ? window : globalThis, function () {
-  // --- lifted verbatim from app.js (describeEngine:364, describeDatabases:371,
-  // describeInstance:376) ---
+  // --- lifted verbatim from app.js (describeEngine:364, describeInstance:376) ---
 
   function describeEngine(run) {
     const ext = (run.formData && run.formData.extractor) || {};
     const snk = (run.formData && run.formData.sinker) || {};
     if (!ext.db_type && !snk.db_type) return '';
     return ext.db_type === snk.db_type ? ext.db_type : `${ext.db_type || '?'} → ${snk.db_type || '?'}`;
-  }
-
-  function describeDatabases(run) {
-    const f = (run.formData && run.formData.filter) || {};
-    return f.do_tbs || f.do_dbs || '(all)';
   }
 
   function describeInstance(url) {
@@ -133,7 +127,7 @@
   }
 
   return {
-    describeEngine, describeDatabases, describeInstance, computeSyncStatus, lagSeconds, pipelineState,
+    describeEngine, describeInstance, computeSyncStatus, lagSeconds, pipelineState,
     snapshotPipelineState, statusBucket, countByStatus, taskLabel, kindLabel, filterTasks, paginate, formatCreatedAt,
   };
 });
