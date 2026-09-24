@@ -46,32 +46,29 @@ you start a task.
 
 ## What it does
 
-- **Create Task** — pick source/target DB (Postgres, MySQL, MongoDB), test the connection, pick
-  tables, choose a sync mode, and start it as a Docker container running the pinned
-  `apecloud/ape-dts` image.
-- **Task Center** — list of all tasks with status (running/completed/failed/stopped), search, and
-  quick actions (stop/remove).
-- **Task Detail** — live pipeline diagram (source → buffer → target), throughput/lag metrics
-  charted over time, and an on-demand data-verification pass (`sink_type=check`) that diffs every
-  row on the source against the target.
+| Page | What you get |
+|---|---|
+| **Create Task** | Pick source/target DB (Postgres, MySQL, MongoDB), test the connection, pick tables, choose a sync mode, start it as a Docker container running the pinned `apecloud/ape-dts` image. |
+| **Task Center** | List of all tasks with status (running/completed/failed/stopped), search, and quick actions (stop/remove). |
+| **Task Detail** | Live pipeline diagram (source → buffer → target), throughput/lag metrics charted over time, and an on-demand data-verification pass (`sink_type=check`) that diffs every row on the source against the target. |
 
 ### Sync modes
 
-- **Real-time Incremental (CDC)** — tails the source's replication log (WAL / binlog / oplog) and
-  streams inserts/updates/deletes as they happen. Rows already in the source **before the task
-  starts are not copied** — the replication slot/position is only created at task start.
-- **Full copy (snapshot)** — one-time copy of rows already in the source. Changes made *after* the
-  task starts are **not captured**. Run a CDC task afterwards for ongoing replication.
-- **Migrate (snapshot + CDC, no gap)** — **Postgres only, both sides.** Zero-downtime migration:
-  reserves the replication slot and captures its LSN *before* the snapshot reads a single row, runs
-  the snapshot, then automatically starts a CDC task from that exact LSN once the snapshot
-  completes — so nothing written during the snapshot is lost. Shows as **one row** in Task Center
-  (the CDC phase runs as a hidden child task, `migrateOf`); Task Detail shows both phases and, if
-  the snapshot phase fails, the replication slot is left alive on purpose (with the manual drop SQL
-  shown) so a retry loses nothing. Implements the manual procedure documented in
-  `ape-dts/docs/en/tutorial/snapshot_and_cdc_without_data_loss.md` — pre-create slot, capture LSN,
-  snapshot, then CDC with `start_lsn` set — automatically (`lib/pgslot.js`, `reconcileStatuses()` in
-  `server.js`).
+| Mode | DB support | Pre-existing rows | Ongoing changes | Downtime / gap |
+|---|---|---|---|---|
+| **Real-time Incremental (CDC)** | Postgres, MySQL, MongoDB | ❌ not copied | ✅ streamed live from task start | No gap on new writes, but anything already in the source before start is skipped |
+| **Full copy (snapshot)** | Postgres, MySQL, MongoDB | ✅ copied once | ❌ not captured | One-time copy only — run a CDC task afterwards for ongoing replication |
+| **Migrate (snapshot + CDC, no gap)** | **Postgres only, both sides** | ✅ copied | ✅ streamed from the snapshot's exact LSN | Zero-downtime, zero gap |
+
+The migrate mode reserves the replication slot and captures its LSN *before* the snapshot reads a
+single row, runs the snapshot, then automatically starts a CDC task from that exact LSN once the
+snapshot completes — so nothing written during the snapshot is lost. Shows as **one row** in Task
+Center (the CDC phase runs as a hidden child task, `migrateOf`); Task Detail shows both phases and,
+if the snapshot phase fails, the replication slot is left alive on purpose (with the manual drop
+SQL shown) so a retry loses nothing. Implements the manual procedure documented in
+`ape-dts/docs/en/tutorial/snapshot_and_cdc_without_data_loss.md` — pre-create slot, capture LSN,
+snapshot, then CDC with `start_lsn` set — automatically (`lib/pgslot.js`, `reconcileStatuses()` in
+`server.js`).
 
 ## Step-by-step: create a task
 
