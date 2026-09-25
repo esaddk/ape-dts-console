@@ -9,6 +9,9 @@
     "url": "git+https://github.com/esaddk/ape-dts-console.git"
   },
   "keywords": ["postgresql", "mysql", "mongodb", "cdc", "data-migration", "change-data-capture", "ape-dts"],
+  "engines": {
+    "node": ">=18"
+  },
   "type": "commonjs",
   "main": "server.js",
   "scripts": {
