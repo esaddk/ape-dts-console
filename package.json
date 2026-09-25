@@ -4,6 +4,11 @@
   "private": true,
   "license": "MIT",
   "description": "Local web UI to build task_config.ini, run ape-dts as a Docker container, and monitor it live.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/esaddk/ape-dts-console.git"
+  },
+  "keywords": ["postgresql", "mysql", "mongodb", "cdc", "data-migration", "change-data-capture", "ape-dts"],
   "type": "commonjs",
   "main": "server.js",
   "scripts": {
